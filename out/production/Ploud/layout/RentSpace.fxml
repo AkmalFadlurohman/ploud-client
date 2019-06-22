@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" prefHeight="500.0" prefWidth="800.0" style="-fx-background-image: url('file:/Users/akmalfadlurohman/IdeaProjects/Ploud/res/image/ploud_background.png'); -fx-background-size: 800 600;" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ploud.renter.controller.RentSpaceController">
+
+    <children>
+        <HBox minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="800.0" style="-fx-background-color: #0145a6;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+                <ImageView blendMode="SRC_ATOP" fitHeight="100.0" fitWidth="750.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@../image/ploud_logo.png" />
+                    </image>
+                </ImageView>
+            </children>
+        </HBox>
+
+        <GridPane alignment="CENTER" hgap="10.0" vgap="10.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="40.0" AnchorPane.topAnchor="100.0">
+            <columnConstraints>
+                <ColumnConstraints halignment="RIGHT" maxWidth="Infinity" minWidth="100.0" prefWidth="100.0">
+                </ColumnConstraints>
+                <ColumnConstraints hgrow="ALWAYS" maxWidth="Infinity" minWidth="200.0" prefWidth="200.0">
+                </ColumnConstraints>
+                <ColumnConstraints />
+            </columnConstraints>
+
+            <Label alignment="TOP_CENTER" style="-fx-font-weight: bold;" text="Please choose a space size to rent:" textFill="WHITE" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.rowSpan="1">
+                <font>
+                    <Font name="Arial" size="36.0" />
+                </font>
+                <GridPane.margin>
+                    <Insets bottom="20.0" top="70.0" />
+                </GridPane.margin>
+            </Label>
+
+            <HBox alignment="CENTER" spacing="25" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="3" GridPane.rowSpan="1">
+                <Button alignment="CENTER" onAction="#rentSpaceTwo" prefHeight="70" prefWidth="150.0" style="-fx-background-color: #6c3;" text="2 GB&#10;5 Coin/Month" textAlignment="CENTER" textFill="WHITE">
+                    <GridPane.margin>
+                        <Insets bottom="20" left="0" right="20" top="20" />
+                    </GridPane.margin>
+                    <font>
+                        <Font size="18.0" />
+                    </font>
+                </Button>
+                <Button alignment="CENTER" onAction="#rentSpaceFour" prefHeight="70" prefWidth="150.0" style="-fx-background-color: #6c3;" text="4 GB&#10;8 Coin/Month" textAlignment="CENTER" textFill="WHITE">
+                    <GridPane.margin>
+                        <Insets bottom="20" left="0" right="20" top="20" />
+                    </GridPane.margin>
+                    <font>
+                        <Font size="18.0" />
+                    </font>
+                </Button>
+                <Button alignment="CENTER" onAction="#rentSpaceEight" prefHeight="70" prefWidth="150.0" style="-fx-background-color: #6c3;" text="8 GB&#10;15 Coin/Month" textAlignment="CENTER" textFill="WHITE">
+                    <GridPane.margin>
+                        <Insets bottom="20" left="0" right="0" top="20" />
+                    </GridPane.margin>
+                    <font>
+                        <Font size="18.0" />
+                    </font>
+                </Button>
+            </HBox>
+
+
+            <rowConstraints>
+                <RowConstraints />
+                <RowConstraints />
+                <RowConstraints />
+                <RowConstraints />
+                <RowConstraints />
+            </rowConstraints>
+        </GridPane>
+
+        <HBox alignment="BOTTOM_CENTER" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="800.0" style="-fx-background-color:  #282f3d;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+            <children>
+                <Label text="©2019 Ploud Build v1" textFill="WHITE">
+                    <font>
+                        <Font name="Arial" size="14" />
+                    </font>
+                </Label>
+            </children>
+        </HBox>
+    </children>
+</AnchorPane>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ploud.auditor.controller.DashboardController">
+
+    <children>
+        <HBox minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="800.0" spacing="100" style="-fx-background-color: #0145a6;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+                <ImageView blendMode="SRC_ATOP" fitHeight="100.0" fitWidth="720.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@../image/ploud_logo.png" />
+                    </image>
+                </ImageView>
+                <MenuButton fx:id="profileMenu" alignment="CENTER" contentDisplay="CENTER" graphicTextGap="1.0" popupSide="LEFT" prefHeight="30.0" prefWidth="30.0" style="-fx-background-radius: 100; -fx-border-radius: 100; -fx-padding: 0; -fx-background-color: transparent;" stylesheets="@../style/menu_button.css" textFill="WHITE">
+                    <HBox.margin>
+                        <Insets bottom="20.0" right="15.0" top="60.0" />
+                    </HBox.margin>
+                    <graphic>
+                        <ImageView fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@../image/menu_bar.png" />
+                            </image>
+                        </ImageView>
+                    </graphic>
+                    <tooltip>
+                        <Tooltip text="Profile Menu" textAlignment="CENTER" />
+                    </tooltip>
+                </MenuButton>
+            </children>
+        </HBox>
+        <HBox alignment="TOP_CENTER" minHeight="-Infinity" minWidth="-Infinity" prefHeight="30" prefWidth="800" spacing="100.0" style="-fx-background-color: #ececec;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="100">
+            <children>
+                <Button fx:id="auditButton" alignment="CENTER" onAction="#doAudit" prefHeight="25" prefWidth="80" style="-fx-background-color: #f6f6f6; -fx-background-radius: 50; -fx-border-color: #d3d3d3; -fx-border-radius: 50;" text="Audit">
+                    <font>
+                        <Font size="12.0" />
+                    </font>
+                    <HBox.margin>
+                        <Insets />
+                    </HBox.margin>
+                    <tooltip>
+                        <Tooltip text="New File Upload" textAlignment="CENTER" />
+                    </tooltip>
+                </Button>
+                <HBox alignment="CENTER" prefHeight="25" prefWidth="150" spacing="5">
+                    <ImageView fitHeight="20" fitWidth="20" pickOnBounds="true" preserveRatio="true">
+                        <image>
+                            <Image url="@../image/coin_balance.png" />
+                        </image>
+                    </ImageView>
+                    <Text fx:id="accountBalance" text="Balance: 0.00" textAlignment="CENTER">
+                        <font>
+                            <Font size="12.0" />
+                        </font>
+                    </Text>
+                    <Button fx:id="withdrawButton" alignment="CENTER" onAction="#doWithdrawBalance" prefHeight="15" prefWidth="15" style="-fx-background-color: #f6f6f6; -fx-background-radius: 100; -fx-border-color: #d3d3d3; -fx-border-radius: 100;" text="↓">
+                        <font>
+                            <Font size="12.0" />
+                        </font>
+                        <HBox.margin>
+                            <Insets />
+                        </HBox.margin>
+                        <tooltip>
+                            <Tooltip text="Withdraw Balance" textAlignment="CENTER" />
+                        </tooltip>
+                    </Button>
+                </HBox>
+                <HBox alignment="CENTER" prefHeight="25" prefWidth="170" spacing="25">
+                    <Text fx:id="validatedTransactions" text="Validated Transactions: " textAlignment="CENTER">
+                        <font>
+                            <Font size="12.0" />
+                        </font>
+                    </Text>
+                    <Text fx:id="lastAudit" text="Last Audit: " textAlignment="CENTER">
+                        <font>
+                            <Font size="12.0" />
+                        </font>
+                    </Text>
+               <HBox.margin>
+                  <Insets right="50.0" />
+               </HBox.margin>
+                </HBox>
+            </children>
+            <padding>
+                <Insets bottom="3.0" left="8.0" right="8.0" top="3.0" />
+            </padding>
+        </HBox>
+
+        <TableView fx:id="auditorTransactionTable" prefWidth="800" AnchorPane.bottomAnchor="20" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" AnchorPane.topAnchor="130">
+        </TableView>
+
+
+        <HBox alignment="BOTTOM_CENTER" minHeight="-Infinity" minWidth="-Infinity" prefHeight="20.0" prefWidth="800.0" style="-fx-background-color:  #282f3d;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+            <children>
+                <Label text="©2019 Ploud Build v1" textFill="WHITE">
+                    <font>
+                        <Font name="Arial" size="14" />
+                    </font>
+                </Label>
+            </children>
+        </HBox>
+    </children>
+</AnchorPane>

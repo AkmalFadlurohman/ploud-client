@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" nodeOrientation="LEFT_TO_RIGHT" prefHeight="500.0" prefWidth="800.0" style="-fx-background-image: url('file:/Users/akmalfadlurohman/IdeaProjects/Ploud/res/image/ploud_background.png'); -fx-background-size: 800 600;" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1">
+
+    <padding><Insets bottom="40" /></padding>
+    <children>
+        <HBox alignment="TOP_CENTER" minHeight="-Infinity" minWidth="-Infinity" prefHeight="100.0" prefWidth="800.0" style="-fx-background-color: #0145a6;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+                <ImageView blendMode="SRC_ATOP" fitHeight="100.0" fitWidth="800.0" pickOnBounds="true" preserveRatio="true">
+                    <image>
+                        <Image url="@../image/ploud_logo.png" />
+                    </image>
+                </ImageView>
+            </children>
+        </HBox>
+
+        <GridPane alignment="TOP_CENTER" hgap="8.0" vgap="10.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="40.0" AnchorPane.topAnchor="40.0">
+            <padding><Insets left="80" right="80" /></padding>
+            <columnConstraints>
+                <ColumnConstraints halignment="RIGHT" maxWidth="Infinity" minWidth="150.0" prefWidth="150.0">
+                </ColumnConstraints>
+                <ColumnConstraints hgrow="ALWAYS" maxWidth="Infinity" minWidth="250.0" prefWidth="250.0">
+                </ColumnConstraints>
+                <ColumnConstraints />
+            </columnConstraints>
+
+            <Label alignment="TOP_CENTER" text="Create an Account" textFill="WHITE" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.rowSpan="1">
+                <font>
+                    <Font name="Arial" size="32" />
+                </font>
+                <GridPane.margin>
+                    <Insets bottom="20.0" top="70.0" />
+                </GridPane.margin>
+            </Label>
+
+            <Label text="Name : " textFill="WHITE" GridPane.columnIndex="0" GridPane.rowIndex="2">
+                <font>
+                    <Font name="Arial" size="18" />
+                </font>
+            </Label>
+            <TextField fx:id="nameField" prefHeight="40" promptText="Full Name" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+
+            <Label text="Email : " textFill="WHITE" GridPane.columnIndex="0" GridPane.rowIndex="3">
+                <font>
+                    <Font name="Arial" size="18" />
+                </font>
+            </Label>
+            <TextField fx:id="emailField" prefHeight="40" promptText="Email Address" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+            <Label text="Password : " textFill="WHITE" GridPane.columnIndex="0" GridPane.rowIndex="4">
+                <font>
+                    <Font name="Arial" size="18" />
+                </font>
+            </Label>
+            <PasswordField fx:id="passwordField" prefHeight="40" promptText="Password 8 or more characters, mix of letters, numbers, and symbols" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+
+            <Label text="Confirm : " textFill="WHITE" GridPane.columnIndex="0" GridPane.rowIndex="5">
+                <font>
+                    <Font name="Arial" size="18" />
+                </font>
+            </Label>
+            <PasswordField fx:id="confirmPasswordField" prefHeight="40" promptText="Confirm" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+
+            <Label fx:id="creditCardLabel" text="Credit Card Number: " textFill="WHITE" GridPane.columnIndex="0" GridPane.rowIndex="6">
+                <font>
+                    <Font name="Arial" size="18" />
+                </font>
+            </Label>
+            <TextField fx:id="creditCardField" prefHeight="40" promptText="Credit Card Number, 16 Digits" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+
+            <HBox alignment="CENTER" prefHeight="50" prefWidth="180" spacing="20" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="7" GridPane.rowSpan="1">
+                <Button fx:id="registerButton" defaultButton="true" onAction="#doRegister" prefHeight="40" prefWidth="100" style="-fx-background-color: #0077ff;" text="Register" textFill="WHITE">
+                    <GridPane.margin>
+                        <Insets bottom="20" left="0" right="0" top="20" />
+                    </GridPane.margin>
+                    <tooltip>
+                        <Tooltip text="Create Ploud Account" textAlignment="CENTER" />
+                    </tooltip>
+                </Button>
+                <ProgressIndicator fx:id="registerIndicator" prefHeight="40" prefWidth="40" progress="-1.0" visible="false"/>
+            <GridPane.margin>
+               <Insets left="60.0" />
+            </GridPane.margin>
+            </HBox>
+
+            <rowConstraints>
+                <RowConstraints />
+                <RowConstraints />
+                <RowConstraints />
+                <RowConstraints />
+                <RowConstraints />
+                <RowConstraints />
+            <RowConstraints />
+            </rowConstraints>
+        </GridPane>
+    </children>
+</AnchorPane>

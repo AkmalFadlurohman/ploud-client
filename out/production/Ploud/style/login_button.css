@@ -1,0 +1,7 @@
+#loginButton {
+    -fx-base: white;
+    -fx-background-image: url("../image/google_white.png");
+    -fx-background-size: 30 30;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position:left;
+}
