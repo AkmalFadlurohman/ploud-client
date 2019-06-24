@@ -41,6 +41,7 @@ public class RenterFile {
     }
 
     public RenterFile(String renterFileData) {
+        System.out.println("Creating new renter file model");
         try {
             JSONObject renterFile = (JSONObject) new JSONParser().parse(renterFileData);
             String name = (String) renterFile.get("name");

@@ -98,14 +98,19 @@ public class DashboardController implements Initializable {
                     System.out.println("Received new file, owner: " + owner + " file: " + renterFileData);
                     RenterFile renterFile = new RenterFile(renterFileData);
                     RentorFile rentorFile = new RentorFile();
+                    System.out.println("Created new renter file model");
+
                     rentorFile.setHash(renterFile.getHash());
                     rentorFile.setSize(renterFile.getSize());
                     rentorFile.setRenderSize(renterFile.getSize());
+                    System.out.println("Setting data for rentor file model");
                     rentorFile.setHostedDate(renterFile.getUploadDate());
                     rentorFile.setOwner(owner);
+                    System.out.println("Building peer list for the received file");
                     ArrayList<String> peerList = renterFile.getHostList();
                     peerList.remove(rentor.getEmail());
                     rentorFile.setPeerList(peerList);
+                    System.out.println("Finished building peer list");
 
                     receivedFile = rentorFile;
                     System.out.println("Received rentor file: " + receivedFile.toJSON());

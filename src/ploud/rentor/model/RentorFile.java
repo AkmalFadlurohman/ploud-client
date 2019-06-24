@@ -29,6 +29,7 @@ public class RentorFile {
     private ArrayList<String> peerList;
 
     public RentorFile() {
+        System.out.println("Creating new empty rentor file model");
         peerList = new ArrayList<>();
     }
 
@@ -129,8 +130,8 @@ public class RentorFile {
     }
 
     public  void setPeerList(ArrayList<String> peerList) {
-        //this.hostList.addAll(hostList);
-        this.peerList = peerList;
+        System.out.println("Setting peer list for rentor file model");
+        this.peerList.addAll(peerList);
     }
 
     public ArrayList<String> getPeerList() {
