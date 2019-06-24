@@ -322,6 +322,7 @@ public class DashboardController implements Initializable {
 
             DateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
             renterFile.setUploadDate(simpleDateFormat.format(new Date()));
+            renterFile.setHostList(candidateHostList);
 
             System.out.println("File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " will be uploaded to network.");
 

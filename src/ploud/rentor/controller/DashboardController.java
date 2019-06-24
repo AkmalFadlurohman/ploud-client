@@ -89,28 +89,29 @@ public class DashboardController implements Initializable {
                 if (ownerParam[0].equals("owner")) {
                     owner = ownerParam[1];
                 }
-                String renterFileJson = null;
+                String renterFileData = null;
                 String fileParam[] = param[1].split("=");
                 if (fileParam[0].equals("file")) {
-                    renterFileJson = fileParam[1];
+                    renterFileData = fileParam[1];
                 }
-                if (owner != null && renterFileJson != null) {
-                    System.out.println("Received new file, owner: " + owner + " file: " + renterFileJson);
-                    RenterFile renterFile = new RenterFile(renterFileJson);
+                if (owner != null && renterFileData != null) {
+                    System.out.println("Received new file, owner: " + owner + " file: " + renterFileData);
+                    RenterFile renterFile = new RenterFile(renterFileData);
                     RentorFile rentorFile = new RentorFile();
                     rentorFile.setHash(renterFile.getHash());
                     rentorFile.setSize(renterFile.getSize());
                     rentorFile.setRenderSize(renterFile.getSize());
-                    DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                    rentorFile.setHostedDate(dateFormat.format(new Date()));
+                    rentorFile.setHostedDate(renterFile.getUploadDate());
                     rentorFile.setOwner(owner);
                     ArrayList<String> peerList = renterFile.getHostList();
-                    peerList.remove(rentor.getIpAddress());
+                    peerList.remove(rentor.getEmail());
                     rentorFile.setPeerList(peerList);
 
                     receivedFile = rentorFile;
+                    System.out.println("Received rentor file: " + receivedFile.toJSON());
                 }
 
+                System.out.println("Checking if owner directory exists...");
                 String ownerDirPath = ploudHomePath + File.separator + owner;
                 File ownerDir = new File(ownerDirPath);
                 if (!ownerDir.exists()) {
@@ -119,6 +120,7 @@ public class DashboardController implements Initializable {
                         System.out.println("New owner: " + owner + " directory created");
                     }
                 }
+                System.out.println("Done preparing file receive for file: " + receivedFile.toJSON());
             }
 
             @Override

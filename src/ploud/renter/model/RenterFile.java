@@ -4,6 +4,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import ploud.rentor.model.Rentor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -113,9 +114,11 @@ public class RenterFile {
         return uploadDate;
     }
 
-    public  void setHostList(ArrayList<String> hostList) {
-        //this.hostList.addAll(hostList);
-        this.hostList = hostList;
+    public void setHostList(ArrayList<Rentor> hostList) {
+        this.hostList = new ArrayList<>();
+        for (Rentor host : hostList) {
+            this.hostList.add(host.getEmail());
+        }
     }
 
     public ArrayList<String> getHostList() {
