@@ -280,6 +280,8 @@ public class DashboardController implements Initializable {
                         accountBalanceText.setText("Balance: " + String.format("%.8f",rentor.getVault().getBalance()));
                         setSpaceOccupancy();
 
+                        rentorFileTable.getItems().addAll(rentor.getRentorFiles());
+
                         progressIndicator.setVisible(false);
                         bodyContainer.setDisable(false);
                     }
