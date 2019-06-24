@@ -517,7 +517,7 @@ public class ComposerConnection {
 //            rentor.put("lastOnline", lastOnline);
 
             String body = rentor.toJSON();
-            System.out.println("Sending update rentor data lastOnline request: " + body);
+            //System.out.println("Sending update rentor data lastOnline request: " + body);
 
             URL urlAddress = new URL(address);
             HttpURLConnection httpPut = (HttpURLConnection) urlAddress.openConnection();
@@ -532,7 +532,7 @@ public class ComposerConnection {
             streamOut.flush();
 
             int responseCode = httpPut.getResponseCode();
-            System.out.println("Update rentor data lastOnline response code: " + responseCode);
+            //System.out.println("Update rentor data lastOnline response code: " + responseCode);
             streamOut.close();
             httpPut.disconnect();
             return responseCode;

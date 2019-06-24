@@ -278,7 +278,7 @@ public class DashboardController implements Initializable {
         serverPollingTask = new Timeline(new KeyFrame(Duration.seconds(20), new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                System.out.println("Polling server to update lastOnline data and retrieve newest vault data...");
+                //System.out.println("Polling server to update lastOnline data and retrieve newest vault data...");
                 rentor.setLastOnline(new Date());
                 int updateLastOnlineResponse = composerConnection.updateLastOnline(rentor);
                 if (updateLastOnlineResponse != HttpsURLConnection.HTTP_OK) {

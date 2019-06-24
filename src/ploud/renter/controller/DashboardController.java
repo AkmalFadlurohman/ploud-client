@@ -19,9 +19,13 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import javafx.util.Pair;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import ploud.renter.model.Vault;
 import ploud.renter.util.Wallet;
+import ploud.rentor.model.Rentor;
 import ploud.util.AlertHelper;
 import ploud.renter.model.Renter;
 import ploud.renter.model.RenterFile;
@@ -34,11 +38,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -186,7 +188,7 @@ public class DashboardController implements Initializable {
             @Override
             public Integer get() {
                 int depositBalanceResponse = composerConnection.depositCoin(vaultID, amount);
-                return Integer.valueOf(depositBalanceResponse);
+                return depositBalanceResponse;
             }
         });
 
@@ -264,7 +266,7 @@ public class DashboardController implements Initializable {
             @Override
             public Integer get() {
                 int withdrawBalanceResponse = composerConnection.withdrawCoin(vaultID, amount);
-                return Integer.valueOf(withdrawBalanceResponse);
+                return withdrawBalanceResponse;
             }
         });
         return withdrawBalanceTask;
@@ -287,57 +289,232 @@ public class DashboardController implements Initializable {
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", "File size limit. " + selectedFile.getName() + " is over 100 MB.");
                 return;
             }
-            if (!isFileDuplicated(selectedFile)) {
-                RenterFile renterFile = new RenterFile();
-                renterFile.setName(selectedFile.getName());
-                renterFile.setHash(selectedFile);
-                renterFile.setSize(selectedFile.length());
-                renterFile.setRenderSize(selectedFile.length());
-
-                DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
-                renterFile.setUploadDate(dateFormat.format(new Date()));
-
-                System.out.println("File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " will be uploaded to network.");
-
-                CompletableFuture<Integer> dashboardFileUploadTask = uploadFile(renterFile, selectedFile);
-                dashboardFileUploadTask.thenAccept(new Consumer<Integer>() {
-                    @Override
-                    public void accept(Integer uploadResponse) {
-                        System.out.println("Dashboard file upload task response: " + uploadResponse);
-                        if (uploadResponse ==1) {
-                            //To do: Send renter updated data to server (new renter file, new free space)
-
-                            renter.getRenterFiles().add(renterFile);
-                            renterFileTable.getItems().add(renterFile);
-
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    long newSpaceUsage = renter.getSpaceUsage()+renterFile.getSize();
-                                    renter.setSpaceUsage(newSpaceUsage);
-
-                                    String renderSpaceUsage = renter.getRenderSpaceUsage();
-                                    String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
-                                    spaceUsageLabel.setText(spaceUsageText + renderSpaceUsage);
-                                    AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Upload", renterFile.getName() + "(" + renterFile.getRenderSize()+ ") successfully stored in network.");
-                                }
-                            });
-                        } else {
-                            Platform.runLater(new Runnable() {
-                                @Override
-                                public void run() {
-                                    AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", renterFile.getName() + " unable to uploaded at the moment. Please try again later.");
-                                }
-                            });
-                        }
-                        renterSocket.close();
-                    }
-                });
-            } else {
+            if (isFileDuplicated(selectedFile)) {
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", selectedFile.getName() + " has already existed in your storage.");
                 return;
             }
+            long fileSize = selectedFile.length();
+            double price = (Long.valueOf(fileSize).doubleValue() * 2 * 2) / 100000000;
+            if (renter.getVault().getBalance() < price) {
+                AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", "Insufficient balance! Please deposit the approximate price: " + String.format("%.8f", price) + " for RentSpace transaction to upload the file.");
+                return;
+            }
+            bodyContainer.setDisable(true);
+            progressIndicator.setVisible(true);
+
+
+            CompletableFuture<ArrayList<Rentor>> buildHostListTask = buildCandidateHostList(fileSize);
+            ArrayList<Rentor> candidateHostList = buildHostListTask.get();
+
+            if (candidateHostList == null || candidateHostList.isEmpty()) {
+                progressIndicator.setVisible(false);
+                bodyContainer.setDisable(false);
+                AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", "There are currently no available rentors in the network to host the file. Please try again later.");
+                return;
+            }
+            System.out.println("Candidate host list count: " + candidateHostList.size());
+
+            RenterFile renterFile = new RenterFile();
+            renterFile.setName(selectedFile.getName());
+            renterFile.setHash(selectedFile);
+            renterFile.setSize(selectedFile.length());
+            renterFile.setRenderSize(selectedFile.length());
+
+            DateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+            renterFile.setUploadDate(simpleDateFormat.format(new Date()));
+
+            System.out.println("File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " will be uploaded to network.");
+
+            CompletableFuture<ArrayList<Rentor>> fileUploadTask = uploadFile(renterFile, selectedFile, candidateHostList);
+            ArrayList<Rentor> hostList = fileUploadTask.get();
+            if (hostList == null || hostList.isEmpty()) {
+                progressIndicator.setVisible(false);
+                bodyContainer.setDisable(false);
+                AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", "Failed to upload " + selectedFile.getName() + " to the discovered rentor peers. Please try again later.");
+                return;
+            }
+            System.out.println("Host list count: " + hostList.size());
+            CompletableFuture<Integer> submitRentSpaceTask = submitRentSpace(renterFile, hostList);
+            int submitRentSpaceResponse = submitRentSpaceTask.get();
+            if (submitRentSpaceResponse != HttpURLConnection.HTTP_OK) {
+                //To do: Delete the already uploaded file in rentor peers
+
+                progressIndicator.setVisible(false);
+                bodyContainer.setDisable(false);
+                AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Transaction Error", "Failed to submit RentSpace transaction to the network. Rolling back uploaded file in rentor peers...");
+            }
+
+            CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace = transferCoinOnRentSpace(hostList, fileSize);
+            transferCoinOnRentSpace.thenAccept(new Consumer<ArrayList<Rentor>>() {
+                @Override
+                public void accept(ArrayList<Rentor> transferCoinFailedHostList) {
+                    System.out.println("Failed TransferCoin host list count: " + candidateHostList.size());
+                    if (transferCoinFailedHostList.isEmpty()) {
+                        renter.getRenterFiles().add(renterFile);
+                        renterFileTable.getItems().add(renterFile);
+
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                long newSpaceUsage = renter.getSpaceUsage()+renterFile.getSize();
+                                renter.setSpaceUsage(newSpaceUsage);
+
+                                String renderSpaceUsage = renter.getRenderSpaceUsage();
+                                String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
+                                spaceUsageLabel.setText(spaceUsageText + renderSpaceUsage);
+
+                                progressIndicator.setVisible(false);
+                                bodyContainer.setDisable(false);
+                                AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Upload", renterFile.getName() + "(" + renterFile.getRenderSize()+ ") successfully stored in network.");
+                            }
+                        });
+                    } else {
+                        //To do: Invoke transfer coin again
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressIndicator.setVisible(false);
+                                bodyContainer.setDisable(false);
+                                AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "Transfer Coin Failed", "Failed to transfer coin to one or more rentor peers. Please do not close log out or close the application window.");
+                            }
+                        });
+                    }
+                }
+            });
         }
+    }
+
+    private CompletableFuture<ArrayList<Rentor>> buildCandidateHostList(long fileSize) {
+        CompletableFuture<ArrayList<Rentor>> buildCandidateHostListTask = CompletableFuture.supplyAsync(new Supplier<ArrayList<Rentor>>() {
+            @Override
+            public ArrayList<Rentor> get() {
+                try {
+                    int candidateHostCount = 0;
+                    ArrayList<Rentor>  candidateHostList = new ArrayList<>();
+                    Date currentTime = new Date();
+                    String availableRentorData = composerConnection.getAvailableRentor(fileSize);
+                    JSONArray availableRentor = (JSONArray) new JSONParser().parse(availableRentorData);
+
+                    Iterator iterator = availableRentor.iterator();
+                    while (iterator.hasNext() && candidateHostCount < 3) {
+                        JSONObject rentorObject = (JSONObject) iterator.next();
+                        String rentorData = rentorObject.toJSONString();
+                        Rentor rentor = new Rentor(rentorData);
+
+                        if (rentor.getLastOnline().toInstant().plusSeconds((long) 5*60).isAfter(currentTime.toInstant())) {
+                            candidateHostCount++;
+                            candidateHostList.add(rentor);
+                        }
+                    }
+                    return candidateHostList;
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                return null;
+            }
+        });
+        return buildCandidateHostListTask;
+    }
+
+    //0 = Upload failed
+    //1 = Upload successful
+    private CompletableFuture<ArrayList<Rentor>> uploadFile(RenterFile renterFile, File selectedFile, ArrayList<Rentor> candidateHostList) {
+        ///Send file to peer
+        CompletableFuture<ArrayList<Rentor>> fileUploadTask = CompletableFuture.supplyAsync(new Supplier<ArrayList<Rentor>>() {
+            @Override
+            public ArrayList<Rentor> get() {
+                HashMap<String, CompletableFuture<String>> socketFileUploadTaskMap = new HashMap<>();
+                int successCount = 0;
+                int successThreshold = 1; // File upload success threshold
+
+                for (Rentor candidateHost : candidateHostList) {
+                    String candidateHostAddress = candidateHost.getIpAddress();
+                    renterSocket = new RenterSocket(candidateHostAddress, port);
+                    renterSocket.start();
+
+                    try {
+                        Future<String> socketListenerResult= renterSocket.sendMessage("fileUpload");
+                        String socketResponse = socketListenerResult.get();
+                        if (socketResponse.equals("OK")) {
+                            socketListenerResult = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + renterFile.toJSON());
+                            socketResponse = socketListenerResult.get();
+                            if (socketResponse.equals("prepareFileUpload")) {
+                                System.out.println("Uploading File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " to " + candidateHostAddress);
+                                //Create file upload task on socket
+                                CompletableFuture<String> socketFileUploadTask  = renterSocket.sendFile(selectedFile);
+                                socketFileUploadTaskMap.put(candidateHost.getEmail(), socketFileUploadTask);
+                            }
+                        }
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    } catch (ExecutionException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+
+                ArrayList<Rentor> hostList = new ArrayList<>();
+                for (Rentor candidateHost : candidateHostList) {
+                    String candidateHostEmail = candidateHost.getEmail();
+                    CompletableFuture<String> socketFileUploadTask = socketFileUploadTaskMap.get(candidateHostEmail);
+                    try {
+                        String fileUploadResponse = socketFileUploadTask.get();
+                        if (fileUploadResponse.equals("Success")) {
+                            successCount++;
+                            String rentorVaultData = composerConnection.getRentorVaultData(candidateHostEmail);
+                            if (rentorVaultData != null) {
+                                candidateHost.setVault(new ploud.rentor.model.Vault(rentorVaultData));
+                                hostList.add(candidateHost);
+                            }
+                        }
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    } catch (ExecutionException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                System.out.println("File upload success count: " + successCount);
+                return hostList;
+//                if (successCount >= successThreshold) {
+//                    return 1;
+//                } else {
+//                    return 0;
+//                }
+            }
+        });
+        return fileUploadTask;
+    }
+
+    private CompletableFuture<Integer> submitRentSpace(RenterFile renterFile, ArrayList<Rentor> hostList) {
+        CompletableFuture<Integer> submitRentSpaceTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
+            @Override
+            public Integer get() {
+                String email = renter.getEmail();
+                int rentSpaceResponse = composerConnection.rentSpace(email, renterFile, hostList);
+                return rentSpaceResponse;
+            }
+        });
+        return submitRentSpaceTask;
+    }
+
+    private CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace(ArrayList<Rentor> hostList, long fileSize) {
+        CompletableFuture<ArrayList<Rentor>> transferCoinTask = CompletableFuture.supplyAsync(new Supplier<ArrayList<Rentor>>() {
+            @Override
+            public ArrayList<Rentor> get() {
+                ArrayList<Rentor> transferCoinFailedHostList = new ArrayList<>();
+                double hostCount = Integer.valueOf(hostList.size()).doubleValue();
+                double hostReward = fileSize * 2 * hostCount / 100000000;
+                String senderVaultID = renter.getVault().getID();
+                for (Rentor host : hostList) {
+                    String receiverVaultID = host.getVault().getID();
+                    int transferCoinResponse = composerConnection.transferCoin(senderVaultID, receiverVaultID, hostReward);
+                    if (transferCoinResponse != HttpURLConnection.HTTP_OK) {
+                        transferCoinFailedHostList.add(host);
+                    }
+                }
+                return transferCoinFailedHostList;
+            }
+        });
+        return transferCoinTask;
     }
 
     private void doDownload(RenterFile selectedFile, Stage primaryStage) {
@@ -386,73 +563,6 @@ public class DashboardController implements Initializable {
         });
     }
 
-    //0 = Upload failed
-    //1 = Upload successful
-    private CompletableFuture<Integer> uploadFile(RenterFile renterFile, File selectedFile) {
-        ///Send file to peer
-        CompletableFuture<Integer> dashboardFileUploadTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
-            @Override
-            public Integer get() {
-                ///To do: Get rentor peer to host the file
-                ArrayList<String> hostList = new ArrayList<>();
-                hostList.add("127.0.0.1");
-                hostList.add("132.16.34.133");
-                hostList.add("113.14.25.233");
-                hostList.add("181.235.10.111");
-                hostList.add("165.15.10.174");
-                renterFile.setHostList(hostList);
-
-                ArrayList<CompletableFuture<String>> socketFileUploadTaskList = new ArrayList<>();
-                int successCount = 0;
-                int successThreshold = 1; // File upload success threshold
-
-                //To do: Loop for each rentor peer
-                String rentorAddress = "127.0.0.1";
-                renterSocket = new RenterSocket(rentorAddress, port);
-                renterSocket.start();
-
-
-                try {
-                    Future<String> socketListenerResult= renterSocket.sendMessage("fileUpload");
-                    String socketResponse = socketListenerResult.get();
-                    if (socketResponse.equals("OK")) {
-                        socketListenerResult = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + renterFile.toJSON());
-                        socketResponse = socketListenerResult.get();
-                        if (socketResponse.equals("prepareFileUpload")) {
-                            System.out.println("Uploading File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " to " + rentorAddress);
-                            //Create file upload task on socket
-                            CompletableFuture<String> socketFileUploadTask  = renterSocket.sendFile(selectedFile);
-                            socketFileUploadTaskList.add(socketFileUploadTask);
-                        }
-                    }
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                } catch (ExecutionException ex) {
-                    ex.printStackTrace();
-                }
-
-                for (CompletableFuture<String> socketFileUploadTask : socketFileUploadTaskList) {
-                    try {
-                        String fileUploadResponse = socketFileUploadTask.get();
-                        if (fileUploadResponse.equals("Success")) {
-                            successCount++;
-                        }
-                    } catch (InterruptedException ex) {
-                       ex.printStackTrace();
-                    } catch (ExecutionException ex) {
-                        ex.printStackTrace();
-                    }
-                }
-                System.out.println("File upload success count: " + successCount);
-                if (successCount >= successThreshold) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
-        });
-        return dashboardFileUploadTask;
-    }
 
     private CompletableFuture<File> downloadFile(RenterFile selectedFile) {
         CompletableFuture<File> dashboardFileDownloadTask = CompletableFuture.supplyAsync(new Supplier<File>() {

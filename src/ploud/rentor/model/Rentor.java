@@ -63,6 +63,7 @@ public class Rentor {
             Date lastLogin = simpleDateFormat.parse((String) rentor.get("lastLogin"));
             Date registerDate = simpleDateFormat.parse((String) rentor.get("registerDate"));
 
+            this.lastOnline = lastOnline;
             this.lastLogin = lastLogin;
             this.registerDate = registerDate;
 
@@ -121,6 +122,10 @@ public class Rentor {
 
     public void setLastOnline(Date lastOnline) {
         this.lastOnline = lastOnline;
+    }
+
+    public Date getLastOnline() {
+        return lastOnline;
     }
 
     public void setToken(String token) {

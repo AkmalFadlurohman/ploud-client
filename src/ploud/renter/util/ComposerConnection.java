@@ -3,11 +3,14 @@ package ploud.renter.util;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import ploud.renter.model.RenterFile;
+import ploud.rentor.model.Rentor;
 
 import java.io.*;
 import java.net.*;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Random;
@@ -26,10 +29,13 @@ public class ComposerConnection {
     private String renterAuthAddress = composerAuthAPI + "/Renter";
     private String depositCoinAddress = composerAuthAPI + "/DepositCoin";
     private String withdrawCoinAddress = composerAuthAPI + "/WithdrawCoin";
+    private String rentSpaceAddress = composerAuthAPI + "/RentSpace";
+    private String transferCoinAddress = composerAuthAPI + "/TransferCoin";
 
     private String networkName = "@ploud-network";
     private String nameSpace = "org.ploud.network";
     private String renterClass = nameSpace + ".Renter";
+    private String rentorClass = nameSpace + ".Rentor";
     private String vaultClass = nameSpace + ".Vault";
     private String depositCoinClass = nameSpace + ".DepositCoin";
     private String withdrawCoinClass = nameSpace + ".WithdrawCoin";
@@ -356,6 +362,42 @@ public class ComposerConnection {
         return null;
     }
 
+    public String getRentorVaultData(String email) {
+        try {
+            String owner = "resource:" + rentorClass + "#" + email;
+            String param = URLEncoder.encode(owner, "UTF-8");
+            String address = composerAuthAPI + "/queries/selectVaultByOwner?owner=" + param;
+            System.out.println("Get rentor vault data address: " + address);
+
+            URL urlAddress = new URL(address);
+            HttpURLConnection httpGet = (HttpURLConnection) urlAddress.openConnection();
+
+            httpGet.setRequestMethod("GET");
+            httpGet.setRequestProperty("X-Access-Token", accessToken);
+            httpGet.setDoInput(true);
+
+            int responseCode = httpGet.getResponseCode();
+            System.out.println("Get rentor vault data response code: " + responseCode);
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpGet.getInputStream()));
+                String inputLine;
+                StringBuilder stringBuilder = new StringBuilder();
+                while ((inputLine = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(inputLine);
+                }
+                bufferedReader.close();
+                httpGet.disconnect();
+                String response = stringBuilder.toString();
+                System.out.println("Get rentor vault data response: " + response);
+                return response;
+            }
+            httpGet.disconnect();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     public String getHistorianTransaction() {
         String address = systemAuthAddress + "/historian";
         System.out.println("Get historian data address: " + address);
@@ -451,9 +493,116 @@ public class ComposerConnection {
         return -1;
     }
 
-    public String getAvailableRentor() {
-        String address = composerAuthAPI + "/queries/selectAvailableRentor";
+    public String getAvailableRentor(long spaceSize) {
+        String param = "?spaceSize=" + spaceSize;
+        String address = composerAuthAPI + "/queries/selectAvailableRentor" + param;
+        System.out.println("Get available rentor address: " + address);
+        try {
+            URL urlAddress = new URL(address);
+            HttpURLConnection httpGet = (HttpURLConnection) urlAddress.openConnection();
+
+            httpGet.setRequestMethod("GET");
+            httpGet.setRequestProperty("X-Access-Token", accessToken);
+            httpGet.setDoInput(true);
+
+            int responseCode = httpGet.getResponseCode();
+            System.out.println("Get available rentor response code: " + responseCode);
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpGet.getInputStream()));
+                String inputLine;
+                StringBuilder stringBuilder = new StringBuilder();
+                while ((inputLine = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(inputLine);
+                }
+                bufferedReader.close();
+                httpGet.disconnect();
+                String response = stringBuilder.toString();
+                System.out.println("Get available rentor response: " + response);
+                return response;
+            }
+            httpGet.disconnect();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
         return null;
+    }
+
+    public int rentSpace(String email, RenterFile selectedFile, ArrayList<Rentor> hostList) {
+        long fileSize = selectedFile.getSize();
+        double hostCount = Integer.valueOf(hostList.size()).doubleValue();
+        double price = (Long.valueOf(fileSize).doubleValue() * 2 * hostCount) / 100000000;
+        String renter = "resource:" + renterClass + "#" + email;
+        JSONObject rentSpace = new JSONObject();
+        rentSpace.put("$class", rentSpaceClass);
+        rentSpace.put("renter", renter);
+        rentSpace.put("documentSize", selectedFile.getSize());
+        rentSpace.put("documentName", selectedFile.getName());
+        rentSpace.put("documentHash", selectedFile.getHash());
+        rentSpace.put("documentUploadDate", selectedFile.getUploadDate());
+        rentSpace.put("price", price);
+
+        JSONArray hostArray = new JSONArray();
+        for (Rentor rentor : hostList) {
+            String host = "resouce:" + rentorClass + "#"  + rentor.getEmail();
+            hostArray.add(host);
+        }
+        rentSpace.put("hostList", hostArray);
+
+        String body = rentSpace.toJSONString();
+        System.out.println("Sending RentSpace transaction request: " + body);
+        try {
+            URL urlAddress = new URL(rentSpaceAddress);
+            HttpURLConnection httpPost = (HttpURLConnection) urlAddress.openConnection();
+
+            httpPost.setRequestMethod("POST");
+            httpPost.setRequestProperty("Content-Type", "application/json");
+            httpPost.setRequestProperty("X-Access-Token", accessToken);
+            httpPost.setDoOutput(true);
+
+            DataOutputStream streamOut = new DataOutputStream(httpPost.getOutputStream());
+            streamOut.writeBytes(body);
+            streamOut.flush();
+
+            int responseCode = httpPost.getResponseCode();
+            System.out.println("RentSpace transaction response code: " + responseCode);
+            return responseCode;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return -1;
+    }
+
+    public int transferCoin(String senderVaultID, String receiverVaultID, double amount) {
+        String senderVault = vaultClass + "#" + senderVaultID;
+        String receiverVault = vaultClass + "#" + receiverVaultID;
+        JSONObject transferCoin = new JSONObject();
+        transferCoin.put("$class", transferCoinClass);
+        transferCoin.put("senderVault", senderVault);
+        transferCoin.put("receiverVault", receiverVault);
+        transferCoin.put("amount", amount);
+
+        String body = transferCoin.toJSONString();
+        System.out.println("Sending TransferCoin transaction request: " + body);
+        try {
+            URL urlAddress = new URL(transferCoinAddress);
+            HttpURLConnection httpPost = (HttpURLConnection) urlAddress.openConnection();
+
+            httpPost.setRequestMethod("POST");
+            httpPost.setRequestProperty("Content-Type", "application/json");
+            httpPost.setRequestProperty("X-Access-Token", accessToken);
+            httpPost.setDoOutput(true);
+
+            DataOutputStream streamOut = new DataOutputStream(httpPost.getOutputStream());
+            streamOut.writeBytes(body);
+            streamOut.flush();
+
+            int responseCode = httpPost.getResponseCode();
+            System.out.println("TransferCoin transaction response code: " + responseCode);
+            return responseCode;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return -1;
     }
 
     public int logOut() {
