@@ -450,6 +450,11 @@ public class ComposerConnection {
         return -1;
     }
 
+    public String getAvailableRentor() {
+        String address = composerAuthAPI + "/queries/selectAvailableRentor";
+        return null;
+    }
+
     public int logOut() {
         String logoutAddress = "http://localhost:3000/auth/logout";
         try {
