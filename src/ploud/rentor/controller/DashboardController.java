@@ -110,7 +110,7 @@ public class DashboardController implements Initializable {
 //                    rentorFile.setOwner(owner);
                     System.out.println("Building peer list for the received file");
                     //ArrayList<String> peerList = renterFile.getHostList();
-                    rentorFile.getPeerList().remove(rentor.getEmail());
+                    //rentorFile.getPeerList().remove(rentor.getEmail());
                     //peerList.remove(rentor.getEmail());
                     //rentorFile.setPeerList(peerList);
                     System.out.println("Finished building peer list");

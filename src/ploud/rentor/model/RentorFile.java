@@ -149,13 +149,31 @@ public class RentorFile {
 
         JSONArray peerArray = new JSONArray();
         for (String peerAddress : peerList) {
-            String peer = rentorClass + "#" + peerAddress;
+            String peer = "resource:" + rentorClass + "#" + peerAddress;
             peerArray.add(peer);
         }
 
         rentorFile.put("hostList", peerArray);
 
         return rentorFile.toJSONString();
+    }
+
+    public JSONObject toJSONObject() {
+        JSONObject rentorFile = new JSONObject();
+        rentorFile.put("owner", owner);
+        rentorFile.put("hash", hash);
+        rentorFile.put("size", size);
+        rentorFile.put("uploadDate", hostedDate);
+
+        JSONArray peerArray = new JSONArray();
+        for (String peerAddress : peerList) {
+            String peer = "resource:" + rentorClass + "#" + peerAddress;
+            peerArray.add(peer);
+        }
+
+        rentorFile.put("hostList", peerArray);
+
+        return rentorFile;
     }
 
     private String getFileSizeBytes(long fileLength) {

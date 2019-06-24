@@ -543,7 +543,7 @@ public class ComposerConnection {
 
         JSONArray hostArray = new JSONArray();
         for (Rentor rentor : hostList) {
-            String host = "resouce:" + rentorClass + "#"  + rentor.getEmail();
+            String host = "resource:" + rentorClass + "#"  + rentor.getEmail();
             hostArray.add(host);
         }
         rentSpace.put("hostList", hostArray);

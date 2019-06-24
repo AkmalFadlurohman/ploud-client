@@ -517,7 +517,9 @@ public class ComposerConnection {
 //            rentor.put("lastOnline", lastOnline);
 
             String body = rentor.toJSON();
-            //System.out.println("Sending update rentor data lastOnline request: " + body);
+            if (!rentor.getRentorFiles().isEmpty()) {
+                System.out.println("Sending update rentor data lastOnline request: " + body);
+            }
 
             URL urlAddress = new URL(address);
             HttpURLConnection httpPut = (HttpURLConnection) urlAddress.openConnection();

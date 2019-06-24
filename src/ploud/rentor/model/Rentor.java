@@ -186,7 +186,7 @@ public class Rentor {
 
         JSONArray fileList = new JSONArray();
         for (RentorFile rentorFile : rentorFiles) {
-            fileList.add(rentorFile.toJSON());
+            fileList.add(rentorFile.toJSONObject());
         }
         rentor.put("documents", fileList);
 

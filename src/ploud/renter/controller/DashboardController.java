@@ -340,13 +340,14 @@ public class DashboardController implements Initializable {
                 progressIndicator.setVisible(false);
                 bodyContainer.setDisable(false);
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Transaction Error", "Failed to submit RentSpace transaction to the network. Rolling back uploaded file in rentor peers...");
+                return;
             }
 
             CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace = transferCoinOnRentSpace(hostList, fileSize);
             transferCoinOnRentSpace.thenAccept(new Consumer<ArrayList<Rentor>>() {
                 @Override
                 public void accept(ArrayList<Rentor> transferCoinFailedHostList) {
-                    System.out.println("Failed TransferCoin host list count: " + candidateHostList.size());
+                    System.out.println("Failed TransferCoin host list count: " + transferCoinFailedHostList.size());
                     if (transferCoinFailedHostList.isEmpty()) {
                         renter.getRenterFiles().add(renterFile);
                         renterFileTable.getItems().add(renterFile);
@@ -436,17 +437,14 @@ public class DashboardController implements Initializable {
                         if (socketResponse.equals("OK")) {
                             //socketListenerResult = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + renterFile.toJSON(renter.getEmail()));
                             socketListenerResult = renterSocket.sendMessage(renterFile.toJSON(renter.getEmail()));
-                            socketResponse = socketListenerResult.get(15, TimeUnit.SECONDS);
+                            socketResponse = socketListenerResult.get();
                             if (socketResponse.equals("prepareFileUpload")) {
                                 System.out.println("Uploading File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " to " + candidateHostAddress);
-                                //Create file upload task on socket
                                 CompletableFuture<String> socketFileUploadTask = renterSocket.sendFile(selectedFile);
                                 socketFileUploadTaskMap.put(candidateHost.getEmail(), socketFileUploadTask);
                             }
                         }
-                    }catch (TimeoutException ex) {
-                        continue;
-                    }catch (InterruptedException ex) {
+                    } catch (InterruptedException ex) {
                         ex.printStackTrace();
                     } catch (ExecutionException ex) {
                         ex.printStackTrace();
@@ -503,7 +501,9 @@ public class DashboardController implements Initializable {
             public ArrayList<Rentor> get() {
                 ArrayList<Rentor> transferCoinFailedHostList = new ArrayList<>();
                 double hostCount = Integer.valueOf(hostList.size()).doubleValue();
+                System.out.println("Submitting TransferCoin transaction for " + hostCount + " hosts.");
                 double hostReward = fileSize * 2 * hostCount / 100000000;
+                System.out.println("Reward/host: " + hostReward);
                 String senderVaultID = renter.getVault().getID();
                 for (Rentor host : hostList) {
                     String receiverVaultID = host.getVault().getID();
