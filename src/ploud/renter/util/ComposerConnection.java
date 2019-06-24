@@ -9,6 +9,7 @@ import java.net.*;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -78,7 +79,7 @@ public class ComposerConnection {
     public String registerRenter(String email, String firstName, String lastName) {
         try {
             String name = firstName + " " + lastName;
-            String ipAddress = InetAddress.getLocalHost().getHostAddress();
+            String ipAddress = getNetworkInetAddress().getHostAddress();
             String registerDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date());
 
             JSONObject renter = new JSONObject();
@@ -256,7 +257,7 @@ public class ComposerConnection {
         }
         try {
             String lastLogin = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date());
-            String ipAddress = InetAddress.getLocalHost().getHostAddress();
+            String ipAddress = getNetworkInetAddress().getHostAddress();
             JSONObject renter = (JSONObject) new JSONParser().parse(renterData);
             renter.put("lastLogin", lastLogin);
             renter.put("ipAddress", ipAddress);
@@ -486,6 +487,26 @@ public class ComposerConnection {
             ex.printStackTrace();
         }
         return -1;
+    }
+
+    private InetAddress getNetworkInetAddress() {
+        try {
+            Enumeration networkInterfacesEn = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfacesEn.hasMoreElements()) {
+                NetworkInterface networkInterface = (NetworkInterface) networkInterfacesEn.nextElement();
+                if (networkInterface.getName().startsWith("en")) {
+                    for (Enumeration inetAddressesEn = networkInterface.getInetAddresses(); inetAddressesEn.hasMoreElements();) {
+                        InetAddress inetAddress = (InetAddress) inetAddressesEn.nextElement();
+                        if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
+                            return inetAddress;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
 }
 

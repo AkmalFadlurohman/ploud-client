@@ -514,11 +514,6 @@ public class DashboardController implements Initializable {
         rentorFileTable.getItems().removeAll();
     }
 
-    private boolean createPloudHomeDirectory() {
-        File ploudHomeDir = new File(ploudHomePath);
-        return ploudHomeDir.mkdir();
-    }
-
     private void createBlockerFile(long size) {
         try {
             String userHome = System.getProperty("user.home");

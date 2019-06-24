@@ -10,6 +10,7 @@ import java.net.*;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -84,7 +85,7 @@ public class ComposerConnection {
     public String registerRentor(String email, String firstName, String lastName) {
         try {
             String name = firstName + " " + lastName;
-            String ipAddress = InetAddress.getLocalHost().getHostAddress();
+            String ipAddress = getNetworkInetAddress().getHostAddress();
             String registerDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date());
 
             JSONObject rentor = new JSONObject();
@@ -302,7 +303,7 @@ public class ComposerConnection {
         }
         try {
             String lastLogin = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date());
-            String ipAddress = InetAddress.getLocalHost().getHostAddress();
+            String ipAddress = getNetworkInetAddress().getHostAddress();
             JSONObject rentor = (JSONObject) new JSONParser().parse(rentorData);
             rentor.put("lastOnline", lastLogin);
             rentor.put("lastLogin", lastLogin);
@@ -541,38 +542,24 @@ public class ComposerConnection {
         return -1;
     }
 
-    public int logOut() {
-        String logoutAddress = "http://localhost:3000/auth/logout";
+    private InetAddress getNetworkInetAddress() {
         try {
-            URL urlAddress = new URL(logoutAddress);
-            HttpURLConnection httpGet = (HttpURLConnection) urlAddress.openConnection();
-
-            httpGet.setRequestMethod("GET");
-            httpGet.setRequestProperty("X-Access-Token", accessToken);
-            httpGet.setDoInput(true);
-
-            int responseCode = httpGet.getResponseCode();
-            System.out.println("Logout response code: " + responseCode);
-            BufferedReader in = new BufferedReader(new InputStreamReader(httpGet.getInputStream()));
-            String inputLine;
-            StringBuilder responseBuilder = new StringBuilder();
-
-            while ((inputLine = in.readLine()) != null) {
-                responseBuilder.append(inputLine);
+            Enumeration networkInterfacesEn = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfacesEn.hasMoreElements()) {
+                NetworkInterface networkInterface = (NetworkInterface) networkInterfacesEn.nextElement();
+                if (networkInterface.getName().startsWith("en")) {
+                    for (Enumeration inetAddressesEn = networkInterface.getInetAddresses(); inetAddressesEn.hasMoreElements();) {
+                        InetAddress inetAddress = (InetAddress) inetAddressesEn.nextElement();
+                        if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
+                            return inetAddress;
+                        }
+                    }
+                }
             }
-            in.close();
-
-            String logoutResponse = responseBuilder.toString();
-
-            System.out.println("Log Out Response: " + logoutResponse);
-            accessToken = null;
-            in.close();
-            httpGet.disconnect();
-            return  responseCode;
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-        return -1;
+        return null;
     }
 }
 
