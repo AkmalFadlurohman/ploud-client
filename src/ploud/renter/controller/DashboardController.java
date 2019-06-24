@@ -39,10 +39,7 @@ import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -434,19 +431,22 @@ public class DashboardController implements Initializable {
                     renterSocket.start();
 
                     try {
-                        Future<String> socketListenerResult= renterSocket.sendMessage("fileUpload");
+                        Future<String> socketListenerResult = renterSocket.sendMessage("fileUpload");
                         String socketResponse = socketListenerResult.get();
                         if (socketResponse.equals("OK")) {
-                            socketListenerResult = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + renterFile.toJSON());
-                            socketResponse = socketListenerResult.get();
+                            //socketListenerResult = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + renterFile.toJSON(renter.getEmail()));
+                            socketListenerResult = renterSocket.sendMessage(renterFile.toJSON(renter.getEmail()));
+                            socketResponse = socketListenerResult.get(15, TimeUnit.SECONDS);
                             if (socketResponse.equals("prepareFileUpload")) {
                                 System.out.println("Uploading File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " to " + candidateHostAddress);
                                 //Create file upload task on socket
-                                CompletableFuture<String> socketFileUploadTask  = renterSocket.sendFile(selectedFile);
+                                CompletableFuture<String> socketFileUploadTask = renterSocket.sendFile(selectedFile);
                                 socketFileUploadTaskMap.put(candidateHost.getEmail(), socketFileUploadTask);
                             }
                         }
-                    } catch (InterruptedException ex) {
+                    }catch (TimeoutException ex) {
+                        continue;
+                    }catch (InterruptedException ex) {
                         ex.printStackTrace();
                     } catch (ExecutionException ex) {
                         ex.printStackTrace();
@@ -579,7 +579,8 @@ public class DashboardController implements Initializable {
                         Future<String> socketListenerTask = renterSocket.sendMessage("fileDownload");
                         String socketResponse = socketListenerTask.get();
                         if (socketResponse.equals("OK")) {
-                            socketListenerTask = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + selectedFile.toJSON());
+                            //socketListenerTask = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + selectedFile.toJSON(renter.getEmail()));
+                            socketListenerTask = renterSocket.sendMessage(selectedFile.toJSON(renter.getEmail()));
                             socketResponse = socketListenerTask.get();
                             if (socketResponse.equals("prepareFileReceive")) {
                                 System.out.println("Downloading File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " from " + rentorAddress);

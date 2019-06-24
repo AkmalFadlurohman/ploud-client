@@ -160,7 +160,7 @@ public class Renter {
 
         JSONArray fileList = new JSONArray();
         for (RenterFile file : renterFiles) {
-            fileList.add(file.toJSON());
+            fileList.add(file.toJSON(email));
         }
         renter.put("renterFiles", fileList);
 

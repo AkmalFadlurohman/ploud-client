@@ -27,6 +27,8 @@ public class RenterFile {
     private String renderSize; //file render size (Bytes, kB, MB)
     private String uploadDate;
     private ArrayList<String> hostList;
+    private String nameSpace = "org.ploud.network";
+    private String rentorClass = nameSpace + ".Rentor";
 
     public RenterFile() {
         hostList = new ArrayList<>();
@@ -126,16 +128,17 @@ public class RenterFile {
         return hostList;
     }
 
-    public String toJSON() {
+    public String toJSON(String owner) {
         JSONObject renterFile = new JSONObject();
         renterFile.put("name", name);
         renterFile.put("size", size);
         renterFile.put("uploadDate", uploadDate);
-
+        renterFile.put("owner", owner);
         renterFile.put("hash", hash);
 
         JSONArray hostArray = new JSONArray();
-        for (String host : hostList) {
+        for (String hostAddress : hostList) {
+            String host = rentorClass + "#" + hostAddress;
             hostArray.add(host);
         }
 

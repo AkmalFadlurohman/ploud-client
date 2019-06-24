@@ -5,10 +5,7 @@ import ploud.renter.model.RenterFile;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 public class RenterSocket {
@@ -18,6 +15,7 @@ public class RenterSocket {
     private DataInputStream streamIn = null;
     private SocketListenerTask socketListenerTask = null;
     private Thread socketListenerThread = null;
+    private ExecutorService executorService = Executors.newCachedThreadPool();
 
 
     public RenterSocket(String serverAddress, int serverPort) {
@@ -87,6 +85,7 @@ public class RenterSocket {
         out.println(message);
         FutureTask<String> socketListenerTask = new FutureTask<String>(new SocketMessageCallback(socket));
         new Thread(socketListenerTask).start();
+        //Future<String> socketListenerTask = executorService.submit(new SocketMessageCallback(socket));
         return socketListenerTask;
     }
 
@@ -208,6 +207,7 @@ public class RenterSocket {
                 DataInputStream streamIn = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
                 String serverMessage = streamIn.readUTF();
                 System.out.println("Server response: " + serverMessage);
+
                 return serverMessage;
             } catch (IOException ex) {
                 ex.printStackTrace();

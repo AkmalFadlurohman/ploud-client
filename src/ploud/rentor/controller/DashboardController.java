@@ -81,51 +81,56 @@ public class DashboardController implements Initializable {
             private RentorFile receivedFile = null;
             private File requestedFile = null;
             @Override
-            public synchronized void prepareFileReceive(String fileHostingRequest) {
-                System.out.println("Preparing file hosting request from: " + fileHostingRequest);
-                String param[] = fileHostingRequest.split("&");
-                String ownerParam[]  = param[0].split("=");
-                String owner = null;
-                if (ownerParam[0].equals("owner")) {
-                    owner = ownerParam[1];
-                }
-                String renterFileData = null;
-                String fileParam[] = param[1].split("=");
-                if (fileParam[0].equals("file")) {
-                    renterFileData = fileParam[1];
-                }
-                if (owner != null && renterFileData != null) {
-                    System.out.println("Received new file, owner: " + owner + " file: " + renterFileData);
-                    RenterFile renterFile = new RenterFile(renterFileData);
-                    RentorFile rentorFile = new RentorFile();
+            public synchronized void prepareFileReceive(String renterFileData) {
+//                System.out.println("Preparing file hosting request from: " + fileHostingRequest);
+//                String param[] = fileHostingRequest.split("&");
+//                String ownerParam[]  = param[0].split("=");
+//                String owner = null;
+//                if (ownerParam[0].equals("owner")) {
+//                    owner = ownerParam[1];
+//                }
+//                String renterFileData = null;
+//                String fileParam[] = param[1].split("=");
+//                if (fileParam[0].equals("file")) {
+//                    renterFileData = fileParam[1];
+//                }
+//                if (owner != null && renterFileData != null) {
+                if (renterFileData != null) {
+                    //System.out.println("Received new file, owner: " + owner + " file: " + renterFileData);
+                    System.out.println("Received new file: " + renterFileData);
+                    //RenterFile renterFile = new RenterFile(renterFileData);
+                    RentorFile rentorFile = new RentorFile(renterFileData);
                     System.out.println("Created new renter file model");
 
-                    rentorFile.setHash(renterFile.getHash());
-                    rentorFile.setSize(renterFile.getSize());
-                    rentorFile.setRenderSize(renterFile.getSize());
-                    System.out.println("Setting data for rentor file model");
-                    rentorFile.setHostedDate(renterFile.getUploadDate());
-                    rentorFile.setOwner(owner);
+//                    rentorFile.setHash(renterFile.getHash());
+//                    rentorFile.setSize(renterFile.getSize());
+//                    rentorFile.setRenderSize(renterFile.getSize());
+//                    System.out.println("Setting data for rentor file model");
+//                    rentorFile.setHostedDate(renterFile.getUploadDate());
+//                    rentorFile.setOwner(owner);
                     System.out.println("Building peer list for the received file");
-                    ArrayList<String> peerList = renterFile.getHostList();
-                    peerList.remove(rentor.getEmail());
-                    rentorFile.setPeerList(peerList);
+                    //ArrayList<String> peerList = renterFile.getHostList();
+                    rentorFile.getPeerList().remove(rentor.getEmail());
+                    //peerList.remove(rentor.getEmail());
+                    //rentorFile.setPeerList(peerList);
                     System.out.println("Finished building peer list");
 
+                    String owner = rentorFile.getOwner();
                     receivedFile = rentorFile;
                     System.out.println("Received rentor file: " + receivedFile.toJSON());
+                    System.out.println("Checking if owner directory exists...");
+                    String ownerDirPath = ploudHomePath + File.separator + owner;
+
+                    File ownerDir = new File(ownerDirPath);
+                    if (!ownerDir.exists()) {
+                        System.out.println("Owner: " + owner + " directory not found. Creating new...");
+                        if (ownerDir.mkdir()) {
+                            System.out.println("New owner: " + owner + " directory created");
+                        }
+                    }
+                    System.out.println("Done preparing file receive for file: " + receivedFile.toJSON());
                 }
 
-                System.out.println("Checking if owner directory exists...");
-                String ownerDirPath = ploudHomePath + File.separator + owner;
-                File ownerDir = new File(ownerDirPath);
-                if (!ownerDir.exists()) {
-                    System.out.println("Owner: " + owner + " directory not found. Creating new...");
-                    if (ownerDir.mkdir()) {
-                        System.out.println("New owner: " + owner + " directory created");
-                    }
-                }
-                System.out.println("Done preparing file receive for file: " + receivedFile.toJSON());
             }
 
             @Override

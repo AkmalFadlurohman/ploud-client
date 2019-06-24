@@ -27,6 +27,8 @@ public class RentorFile {
     private String hostedDate;
     private String owner;
     private ArrayList<String> peerList;
+    private String nameSpace = "org.ploud.network";
+    private String rentorClass = nameSpace + ".Rentor";
 
     public RentorFile() {
         System.out.println("Creating new empty rentor file model");
@@ -146,7 +148,8 @@ public class RentorFile {
         rentorFile.put("uploadDate", hostedDate);
 
         JSONArray peerArray = new JSONArray();
-        for (String peer : peerList) {
+        for (String peerAddress : peerList) {
+            String peer = rentorClass + "#" + peerAddress;
             peerArray.add(peer);
         }
 
