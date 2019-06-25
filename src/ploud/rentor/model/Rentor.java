@@ -195,11 +195,30 @@ public class Rentor {
 
     public String getRenderSpaceOccupancy() {
         long occupiedSpace = registeredSpace - freeSpace;
-        return getSizeGigaBytes(occupiedSpace);
+        if (occupiedSpace < 1000) {
+            return getSizeBytes(occupiedSpace);
+        } else if (occupiedSpace < (1000*1000)) {
+            return  getSizeKiloBytes(occupiedSpace);
+        } else if (occupiedSpace < (1000*1000*1000)) {
+            return getSizeMegaBytes(occupiedSpace);
+        } else {
+            return getSizeGigaBytes(occupiedSpace);
+        }
+    }
+
+    private String getSizeBytes(long spaceSize) {
+        return spaceSize + " byte";
+    }
+
+    private String getSizeKiloBytes(long spaceSize) {
+        return String.format("%.2f", (double) spaceSize / 1000) + "  kB";
+    }
+
+    private String getSizeMegaBytes(long spaceSize) {
+        return String.format("%.2f", (double) spaceSize / (1000 * 1000)) + " MB";
     }
 
     public String getSizeGigaBytes(long spaceSize) {
-        //return String.format("%.2f", (double) spaceSize / (1024*1024*1024)) + " GB";
         return String.format("%.2f", (double) spaceSize / (1000*1000*1000)) + " GB";
     }
 }

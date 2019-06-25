@@ -82,38 +82,9 @@ public class DashboardController implements Initializable {
             private File requestedFile = null;
             @Override
             public synchronized void prepareFileReceive(String renterFileData) {
-//                System.out.println("Preparing file hosting request from: " + fileHostingRequest);
-//                String param[] = fileHostingRequest.split("&");
-//                String ownerParam[]  = param[0].split("=");
-//                String owner = null;
-//                if (ownerParam[0].equals("owner")) {
-//                    owner = ownerParam[1];
-//                }
-//                String renterFileData = null;
-//                String fileParam[] = param[1].split("=");
-//                if (fileParam[0].equals("file")) {
-//                    renterFileData = fileParam[1];
-//                }
-//                if (owner != null && renterFileData != null) {
                 if (renterFileData != null) {
-                    //System.out.println("Received new file, owner: " + owner + " file: " + renterFileData);
                     System.out.println("Received new file: " + renterFileData);
-                    //RenterFile renterFile = new RenterFile(renterFileData);
                     RentorFile rentorFile = new RentorFile(renterFileData);
-                    System.out.println("Created new renter file model");
-
-//                    rentorFile.setHash(renterFile.getHash());
-//                    rentorFile.setSize(renterFile.getSize());
-//                    rentorFile.setRenderSize(renterFile.getSize());
-//                    System.out.println("Setting data for rentor file model");
-//                    rentorFile.setHostedDate(renterFile.getUploadDate());
-//                    rentorFile.setOwner(owner);
-                    System.out.println("Building peer list for the received file");
-                    //ArrayList<String> peerList = renterFile.getHostList();
-                    //rentorFile.getPeerList().remove(rentor.getEmail());
-                    //peerList.remove(rentor.getEmail());
-                    //rentorFile.setPeerList(peerList);
-                    System.out.println("Finished building peer list");
 
                     String owner = rentorFile.getOwner();
                     receivedFile = rentorFile;
@@ -151,9 +122,6 @@ public class DashboardController implements Initializable {
                             System.out.println("Received " + totalBytesRead + " bytes. Remaining expected: " + remainingBytes);
                             fos.write(receivedFileBytes, 0, bytesRead);
                         }
-                        //streamIn.read(receivedFileBytes, 0, receivedFileSize);
-                        //bos.write(receivedFileBytes, 0, bytesRead);
-                        //bos.close();
                         fos.close();
                     } catch (IOException ex) {
                         ex.printStackTrace();
@@ -166,7 +134,6 @@ public class DashboardController implements Initializable {
                 if (receivedFile != null) {
                     System.out.println("Completed new file hosting request received from: " + receivedFile.getOwner());
 
-                    //To do: Send rentor updated rentor data to server (Rentor new file, new free space)
                     long receivedFileSize = receivedFile.getSize();
                     updateBlockerFileSize(receivedFileSize);
 
@@ -186,44 +153,32 @@ public class DashboardController implements Initializable {
             }
 
             @Override
-            public synchronized void prepareRequestedFile(String fileDownloadRequest) {
+            public synchronized void prepareRequestedFile(String renterFileData) {
                 System.out.println("Preparing to send requested file...");
-                String param[] = fileDownloadRequest.split("&");
-                String ownerParam[] = param[0].split("=");
-                String owner = null;
-                if (ownerParam[0].equals("owner")) {
-                    owner = ownerParam[1];
-                }
-                String fileParam[] = param[1].split("=");
-                String renterFileJson = null;
-                if (fileParam[0].equals("file")) {
-                    renterFileJson = fileParam[1];
-                }
 
-                if (owner != null && renterFileJson != null) {
-                    RenterFile renterFile = new RenterFile(renterFileJson);
-                    System.out.println("Loading requested file: " + renterFile.getHash());
+                RentorFile rentorFile = new RentorFile(renterFileData);
+                System.out.println("Loading requested file: " + rentorFile.getHash());
 
-                    String requestedFilePath = ploudHomePath + File.separator + owner + File.separator + renterFile.getHash();
-                    requestedFile = new File(requestedFilePath);
-                    if (!requestedFile.exists()) {
-                        System.out.println("Error: " + requestedFilePath + " does not exist");
-                        requestedFile = null;
-                        //return "File not Exist";
-                        return;
-                    }
-                    if (requestedFile.length() != renterFile.getSize()) {
-                        System.out.println("Error: Mismatched requested file size");
-                        requestedFile = null;
-                        //return "Mismatched file";
-                        return;
-                    }
-                    //return "Ready";
+                String owner = rentorFile.getOwner();
+                String requestedFilePath = ploudHomePath + File.separator + owner + File.separator + rentorFile.getHash();
+                requestedFile = new File(requestedFilePath);
+                if (!requestedFile.exists()) {
+                    System.out.println("Error: " + requestedFilePath + " does not exist");
+                    requestedFile = null;
+                    //return "File not Exist";
+                    return;
+                }
+                if (requestedFile.length() != rentorFile.getSize()) {
+                    System.out.println("Error: Mismatched requested file size");
+                    requestedFile = null;
+                    //return "Mismatched file";
+                    return;
                 }
             }
 
             @Override
-            public void sendRequestedFile(DataOutputStream streamOut) {
+            public boolean sendRequestedFile(DataOutputStream streamOut) {
+                boolean fileSent = false;
                 if (requestedFile != null) {
                     try {
                         FileInputStream fileInputStream = new FileInputStream(requestedFile);
@@ -237,7 +192,9 @@ public class DashboardController implements Initializable {
                         ex.printStackTrace();
                     }
                     requestedFile = null;
+                    fileSent = true;
                 }
+                return fileSent;
             }
 
             @Override
@@ -296,7 +253,7 @@ public class DashboardController implements Initializable {
                 rentor.setLastOnline(new Date());
                 int updateLastOnlineResponse = composerConnection.updateLastOnline(rentor);
                 if (updateLastOnlineResponse != HttpsURLConnection.HTTP_OK) {
-                    System.out.println("Error! Failed to update rentor lastOnline data.");
+                    System.out.println("Error! Failed to update rentor lastOnline data. Response code: " + updateLastOnlineResponse);
                 }
 
             }
@@ -504,8 +461,8 @@ public class DashboardController implements Initializable {
 
     private void setSpaceOccupancy() {
         String renderSpaceOccupancy = rentor.getRenderSpaceOccupancy();
-        String renderRentOutSpace = rentor.getSizeGigaBytes(rentor.getRegisteredSpace());
-        String renderSpaceOccupancyRatio = renderSpaceOccupancy + " occupied out of " + renderRentOutSpace;
+        String renderRegisteredSpace = rentor.getSizeGigaBytes(rentor.getRegisteredSpace());
+        String renderSpaceOccupancyRatio = renderSpaceOccupancy + " occupied out of " + renderRegisteredSpace;
         spaceOccupancyLabel.setText(renderSpaceOccupancyRatio);
 
         double spaceOccupancy = Long.valueOf(rentor.getRegisteredSpace()-rentor.getFreeSpace()).doubleValue();

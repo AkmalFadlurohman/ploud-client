@@ -25,8 +25,9 @@ public class ComposerConnection {
     private String identitySystemAddress = systemAddress + "/identities";
 
     private String renterAddress = composerAPI + "/Renter";
-    private String vaultAddress = composerAPI + "/Vault";
     private String renterAuthAddress = composerAuthAPI + "/Renter";
+    private String rentorAuthAddress = composerAuthAPI + "/Rentor";
+    private String vaultAddress = composerAuthAPI + "/Vault";
     private String depositCoinAddress = composerAuthAPI + "/DepositCoin";
     private String withdrawCoinAddress = composerAuthAPI + "/WithdrawCoin";
     private String rentSpaceAddress = composerAuthAPI + "/RentSpace";
@@ -518,6 +519,39 @@ public class ComposerConnection {
                 httpGet.disconnect();
                 String response = stringBuilder.toString();
                 System.out.println("Get available rentor response: " + response);
+                return response;
+            }
+            httpGet.disconnect();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public String getRentorData(String email) {
+        String param = "/" + email;
+        String address = rentorAuthAddress+param;
+        try {
+            URL urlAddress = new URL(address);
+            HttpURLConnection httpGet = (HttpURLConnection) urlAddress.openConnection();
+
+            httpGet.setRequestMethod("GET");
+            httpGet.setRequestProperty("X-Access-Token", accessToken);
+            httpGet.setDoInput(true);
+
+            int responseCode = httpGet.getResponseCode();
+            System.out.println("Get rentor data response code: " + responseCode);
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpGet.getInputStream()));
+                String inputLine;
+                StringBuilder stringBuilder = new StringBuilder();
+                while ((inputLine = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(inputLine);
+                }
+                bufferedReader.close();
+                httpGet.disconnect();
+                String response = stringBuilder.toString();
+                System.out.println("Get rentor data response: " + response);
                 return response;
             }
             httpGet.disconnect();

@@ -150,8 +150,12 @@ public abstract class RentorSocketServer implements RentorTask, Runnable {
 //                                }
                                 prepareRequestedFile(fileDownloadRequest);
                                 sendMessage("prepareFileReceive");
-                                sendRequestedFile(streamOut);
-                                terminate();
+                                boolean requestedFileSent = sendRequestedFile(streamOut);
+                                if (requestedFileSent) {
+                                    terminate();
+                                } else {
+                                    System.out.println("Failed to send the requested file...");
+                                }
                             } else if (clientMessage.equals("getError")) {
                                 sendMessage(errorMessage);
                             } else {

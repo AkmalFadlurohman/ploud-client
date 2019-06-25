@@ -23,8 +23,6 @@ public class RenterSocket {
         try {
             socket = new Socket(serverAddress, serverPort);
             System.out.println("Connected to rentor peer: " + socket);
-        } catch (UnknownHostException ex) {
-            ex.printStackTrace();
         } catch (IOException ex) {
             ex.printStackTrace();
         }

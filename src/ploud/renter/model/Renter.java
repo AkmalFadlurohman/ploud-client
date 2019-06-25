@@ -169,11 +169,31 @@ public class Renter {
     }
 
     public String getRenderSpaceUsage() {
-        return getSizeGigaBytes(spaceUsage);
+        if (spaceUsage < 1000) {
+            return getSizeBytes(spaceUsage);
+        } else if (spaceUsage < (1000*1000)) {
+            return  getSizeKiloBytes(spaceUsage);
+        } else if (spaceUsage < (1000*1000*1000)) {
+            return getSizeMegaBytes(spaceUsage);
+        } else {
+            return getSizeGigaBytes(spaceUsage);
+        }
+    }
+
+    private String getSizeBytes(long spaceSize) {
+        return spaceSize + " byte";
+    }
+
+    private String getSizeKiloBytes(long spaceSize) {
+        return String.format("%.2f", (double) spaceSize / 1000) + "  kB";
+    }
+
+    private String getSizeMegaBytes(long spaceSize) {
+        return String.format("%.2f", (double) spaceSize / (1000 * 1000)) + " MB";
     }
 
     private String getSizeGigaBytes(long spaceSize) {
-        return String.format("%.2f", (double) spaceSize / (1024*1024*1024)) + " GB";
+        return String.format("%.2f", (double) spaceSize / (1000*1000*1000)) + " GB";
     }
 }
 

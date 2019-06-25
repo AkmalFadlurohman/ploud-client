@@ -66,6 +66,8 @@ public class DashboardController implements Initializable {
     private RenterSocket renterSocket = null;
 
     private ComposerConnection composerConnection;
+    private ExecutorService pendingTaskPool;
+    private static int pendingTransferCoinCount = 0;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -345,41 +347,73 @@ public class DashboardController implements Initializable {
                 return;
             }
 
-            CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace = transferCoinOnRentSpace(hostList, fileSize);
+            double hostCount = Integer.valueOf(hostList.size()).doubleValue();
+            double hostReward = fileSize * 2 * hostCount / 100000000;
+            System.out.println("Reward/host: " + hostReward);
+            CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace = transferCoinOnRentSpace(hostList, hostReward);
             transferCoinOnRentSpace.thenAccept(new Consumer<ArrayList<Rentor>>() {
                 @Override
                 public void accept(ArrayList<Rentor> transferCoinFailedHostList) {
                     System.out.println("Failed TransferCoin host list count: " + transferCoinFailedHostList.size());
-                    if (transferCoinFailedHostList.isEmpty()) {
-                        renter.getRenterFiles().add(renterFile);
-                        renterFileTable.getItems().add(renterFile);
+                    renter.getRenterFiles().add(renterFile);
+                    renterFileTable.getItems().add(renterFile);
 
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                long newSpaceUsage = renter.getSpaceUsage()+renterFile.getSize();
-                                renter.setSpaceUsage(newSpaceUsage);
+                    Platform.runLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            long newSpaceUsage = renter.getSpaceUsage()+renterFile.getSize();
+                            renter.setSpaceUsage(newSpaceUsage);
 
-                                String renderSpaceUsage = renter.getRenderSpaceUsage();
-                                String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
-                                spaceUsageLabel.setText(spaceUsageText + renderSpaceUsage);
+                            String renderSpaceUsage = renter.getRenderSpaceUsage();
+                            String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
+                            spaceUsageLabel.setText(spaceUsageText + " " +  renderSpaceUsage);
 
-                                progressIndicator.setVisible(false);
-                                bodyContainer.setDisable(false);
-                                AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Upload", renterFile.getName() + "(" + renterFile.getRenderSize()+ ") successfully stored in network.");
+                            progressIndicator.setVisible(false);
+                            bodyContainer.setDisable(false);
+                            AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Upload", renterFile.getName() + "(" + renterFile.getRenderSize()+ ") successfully stored in network.");
+                            if (!transferCoinFailedHostList.isEmpty()) {
+                                uploadButton.setDisable(true);
+                                AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "Transfer Coin Failed", "Failed to transfer coin to one or more rentor peers. Please do not log out or close the application window.");
+
+                                pendingTaskPool= Executors.newFixedThreadPool(5);
+                                pendingTransferCoinCount = transferCoinFailedHostList.size();
+                                for (Rentor transferCoinFailedHost : transferCoinFailedHostList) {
+                                    Future<Integer> pendingTransferCoinFuture = pendingTaskPool.submit(transferCoinOnFailed(transferCoinFailedHost, hostReward));
+
+                                    Runnable pendingTransferCoinPollingTask = new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            if (pendingTransferCoinFuture.isDone()) {
+                                                try {
+                                                    int transferCoinResponse = pendingTransferCoinFuture.get();
+                                                    if (transferCoinResponse == HttpURLConnection.HTTP_OK) {
+                                                        pendingTransferCoinCount--;
+                                                        if (pendingTransferCoinCount == 0) {
+                                                            pendingTaskPool.shutdown();
+                                                            Platform.runLater(new Runnable() {
+                                                                @Override
+                                                                public void run() {
+                                                                    uploadButton.setDisable(false);
+                                                                }
+                                                            });
+                                                        }
+                                                    } else {
+                                                        System.out.println("Failed to retry submitting TransferCoin transaction for host: " + transferCoinFailedHost.getEmail());
+                                                    }
+                                                } catch (ExecutionException ex) {
+                                                    ex.printStackTrace();
+                                                } catch (InterruptedException ex) {
+                                                    ex.printStackTrace();
+                                                }
+                                            }
+                                        }
+                                    };
+                                    ScheduledExecutorService pendingTransferCoinPollingService = Executors.newSingleThreadScheduledExecutor();
+                                    pendingTransferCoinPollingService.schedule(pendingTransferCoinPollingTask, 4, TimeUnit.SECONDS);
+                                }
                             }
-                        });
-                    } else {
-                        //To do: Invoke transfer coin again
-                        Platform.runLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                progressIndicator.setVisible(false);
-                                bodyContainer.setDisable(false);
-                                AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "Transfer Coin Failed", "Failed to transfer coin to one or more rentor peers. Please do not close log out or close the application window.");
-                            }
-                        });
-                    }
+                        }
+                    });
                 }
             });
         }
@@ -402,6 +436,7 @@ public class DashboardController implements Initializable {
                         String rentorData = rentorObject.toJSONString();
                         Rentor rentor = new Rentor(rentorData);
 
+                        //Check if rentor lastOnline time is in 5 minutes range
                         if (rentor.getLastOnline().toInstant().plusSeconds((long) 5*60).isAfter(currentTime.toInstant())) {
                             candidateHostCount++;
                             candidateHostList.add(rentor);
@@ -417,10 +452,7 @@ public class DashboardController implements Initializable {
         return buildCandidateHostListTask;
     }
 
-    //0 = Upload failed
-    //1 = Upload successful
     private CompletableFuture<ArrayList<Rentor>> uploadFile(RenterFile renterFile, File selectedFile, ArrayList<Rentor> candidateHostList) {
-        ///Send file to peer
         CompletableFuture<ArrayList<Rentor>> fileUploadTask = CompletableFuture.supplyAsync(new Supplier<ArrayList<Rentor>>() {
             @Override
             public ArrayList<Rentor> get() {
@@ -475,11 +507,6 @@ public class DashboardController implements Initializable {
                 }
                 System.out.println("File upload success count: " + successCount);
                 return hostList;
-//                if (successCount >= successThreshold) {
-//                    return 1;
-//                } else {
-//                    return 0;
-//                }
             }
         });
         return fileUploadTask;
@@ -497,17 +524,14 @@ public class DashboardController implements Initializable {
         return submitRentSpaceTask;
     }
 
-    private CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace(ArrayList<Rentor> hostList, long fileSize) {
+    private CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace(ArrayList<Rentor> hostList, double hostReward) {
         CompletableFuture<ArrayList<Rentor>> transferCoinTask = CompletableFuture.supplyAsync(new Supplier<ArrayList<Rentor>>() {
             @Override
             public ArrayList<Rentor> get() {
                 ArrayList<Rentor> transferCoinFailedHostList = new ArrayList<>();
-                double hostCount = Integer.valueOf(hostList.size()).doubleValue();
-                System.out.println("Submitting TransferCoin transaction for " + hostCount + " hosts.");
-                double hostReward = fileSize * 2 * hostCount / 100000000;
-                System.out.println("Reward/host: " + hostReward);
                 String senderVaultID = renter.getVault().getID();
                 for (Rentor host : hostList) {
+                    System.out.println("Submitting TransferCoin transaction on RentSpace for host: " + host.getEmail());
                     String receiverVaultID = host.getVault().getID();
                     int transferCoinResponse = composerConnection.transferCoin(senderVaultID, receiverVaultID, hostReward);
                     if (transferCoinResponse != HttpURLConnection.HTTP_OK) {
@@ -520,8 +544,23 @@ public class DashboardController implements Initializable {
         return transferCoinTask;
     }
 
+    private Callable<Integer> transferCoinOnFailed(Rentor host, double hostReward) {
+        Callable<Integer> transferCoinCallable = new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                System.out.println("Submitting TransferCoin transaction on failed transfer for host: " + host.getEmail());
+                String senderVaultID = renter.getVault().getID();
+                String receiverVaultID = host.getVault().getID();
+                int transferCoinResponse = composerConnection.transferCoin(senderVaultID, receiverVaultID, hostReward);
+                return transferCoinResponse;
+            }
+        };
+        return transferCoinCallable;
+    }
+
     private void doDownload(RenterFile selectedFile, Stage primaryStage) {
-        long freeSpace = new File("/").getFreeSpace();
+        String userHome = System.getProperty("user.home");
+        long freeSpace = new File(userHome).getUsableSpace();
         if (freeSpace < selectedFile.getSize()) {
             AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Download Error", "There is not enough space left in you local storage.");
             return;
@@ -571,34 +610,41 @@ public class DashboardController implements Initializable {
         CompletableFuture<File> dashboardFileDownloadTask = CompletableFuture.supplyAsync(new Supplier<File>() {
             @Override
             public File get() {
-                for (String host : selectedFile.getHostList()) {
-                    String rentorAddress = host;
-                    int port = 8089;
-                    renterSocket = new RenterSocket(rentorAddress, port);
-                    renterSocket.start();
+                Date currentTime = new Date();
+                for (String hostEmail : selectedFile.getHostList()) {
+                    String rentorData = composerConnection.getRentorData(hostEmail);
+                    Rentor host = new Rentor(rentorData);
 
-                    try {
-                        Future<String> socketListenerTask = renterSocket.sendMessage("fileDownload");
-                        String socketResponse = socketListenerTask.get();
-                        if (socketResponse.equals("OK")) {
-                            //socketListenerTask = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + selectedFile.toJSON(renter.getEmail()));
-                            socketListenerTask = renterSocket.sendMessage(selectedFile.toJSON(renter.getEmail()));
-                            socketResponse = socketListenerTask.get();
-                            if (socketResponse.equals("prepareFileReceive")) {
-                                System.out.println("Downloading File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " from " + rentorAddress);
-                                //Create file receive task on socket
-                                CompletableFuture<File> socketFileDownloadTask  = renterSocket.receiveFile(selectedFile);
-                                File receivedFile = socketFileDownloadTask.get();
-                                if (receivedFile != null) {
-                                    System.out.println("File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " successfully downloaded");
-                                    return receivedFile;
+                    //Check if host lastOnline time is in 5 minutes range
+                    if (host.getLastOnline().toInstant().plusSeconds((long) 5*60).isAfter(currentTime.toInstant())) {
+                        String hostAddress = host.getIpAddress();
+                        int port = 8089;
+                        renterSocket = new RenterSocket(hostAddress, port);
+                        renterSocket.start();
+
+                        try {
+                            Future<String> socketListenerTask = renterSocket.sendMessage("fileDownload");
+                            String socketResponse = socketListenerTask.get();
+                            if (socketResponse.equals("OK")) {
+                                //socketListenerTask = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + selectedFile.toJSON(renter.getEmail()));
+                                socketListenerTask = renterSocket.sendMessage(selectedFile.toJSON(renter.getEmail()));
+                                socketResponse = socketListenerTask.get();
+                                if (socketResponse.equals("prepareFileReceive")) {
+                                    System.out.println("Downloading File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " from " + hostAddress);
+                                    //Create file receive task on socket
+                                    CompletableFuture<File> socketFileDownloadTask  = renterSocket.receiveFile(selectedFile);
+                                    File receivedFile = socketFileDownloadTask.get();
+                                    if (receivedFile != null) {
+                                        System.out.println("File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " successfully downloaded");
+                                        return receivedFile;
+                                    }
                                 }
                             }
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        } catch (ExecutionException ex) {
+                            ex.printStackTrace();
                         }
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
-                    } catch (ExecutionException ex) {
-                        ex.printStackTrace();
                     }
                 }
                 System.out.println("Error! No file received");
@@ -677,6 +723,9 @@ public class DashboardController implements Initializable {
 
         TableColumn<RenterFile, Float> sizeColumn = new TableColumn<>("Size");
         sizeColumn.setCellValueFactory(new PropertyValueFactory<>("renderSize"));
+
+        TableColumn<RenterFile, String> hashColumn = new TableColumn<>("Hash");
+        hashColumn.setCellValueFactory(new PropertyValueFactory<>("hash"));
 
         TableColumn<RenterFile, String> uploadDateColumn = new TableColumn<>("Upload Date");
         uploadDateColumn.setCellValueFactory(new PropertyValueFactory<>("uploadDate"));
@@ -759,7 +808,7 @@ public class DashboardController implements Initializable {
         actionColumn.setCellFactory(cellFactory);
 
         renterFileTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        renterFileTable.getColumns().addAll(nameColumn, sizeColumn, uploadDateColumn, hostListColumn, actionColumn);
+        renterFileTable.getColumns().addAll(nameColumn, sizeColumn, hashColumn, uploadDateColumn, hostListColumn, actionColumn);
     }
 
     public void closeSocket() {
