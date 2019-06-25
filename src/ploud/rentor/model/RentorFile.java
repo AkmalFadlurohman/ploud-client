@@ -47,6 +47,7 @@ public class RentorFile {
     }
 
     public RentorFile(String rentorFileData) {
+        peerList = new ArrayList<>();
         try {
 
             JSONObject rentorFile = (JSONObject) new JSONParser().parse(rentorFileData);
@@ -65,7 +66,6 @@ public class RentorFile {
             this.path = path;
             setRenderSize(size);
 
-            this.peerList = new ArrayList<>();
             JSONArray peerArray = (JSONArray) rentorFile.get("hostList");
             Iterator iterator = peerArray.iterator();
             while (iterator.hasNext()) {
@@ -75,6 +75,32 @@ public class RentorFile {
             }
         } catch (ParseException ex) {
             ex.printStackTrace();
+        }
+    }
+
+    public RentorFile(JSONObject rentorFileJSON) {
+        peerList = new ArrayList<>();
+        String hash = (String) rentorFileJSON.get("hash");
+        long size = (long) rentorFileJSON.get("size");
+        String hostedDate = (String) rentorFileJSON.get("uploadDate");
+        String owner = (String) rentorFileJSON.get("owner");
+
+
+        this.hash = hash;
+        this.size = size;
+        this.hostedDate = hostedDate;
+        this.owner = owner;
+
+        String path = File.separator + owner + File.separator + hash;
+        this.path = path;
+        setRenderSize(size);
+
+        JSONArray peerArray = (JSONArray) rentorFileJSON.get("hostList");
+        Iterator iterator = peerArray.iterator();
+        while (iterator.hasNext()) {
+            String peer = (String) iterator.next();
+            String peerAddress = peer.split("#")[1];
+            peerList.add(peerAddress);
         }
     }
 

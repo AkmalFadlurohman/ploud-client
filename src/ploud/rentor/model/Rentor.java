@@ -71,8 +71,8 @@ public class Rentor {
             JSONArray fileList = (JSONArray) rentor.get("documents");
             Iterator iterator = fileList.iterator();
             while (iterator.hasNext()) {
-                String jsonRentorFile = (String) iterator.next();
-                RentorFile rentorFile = new RentorFile(jsonRentorFile);
+                JSONObject rentorFileJSON = (JSONObject) iterator.next();
+                RentorFile rentorFile = new RentorFile(rentorFileJSON);
                 rentorFiles.add(rentorFile);
             }
         } catch (Exception ex) {

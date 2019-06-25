@@ -1,5 +1,6 @@
 package ploud.rentor.util;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
@@ -22,12 +23,15 @@ import ploud.rentor.model.Transaction;
 import ploud.util.AlertHelper;
 
 import java.util.Iterator;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Wallet {
     private ComposerConnection composerConnection;
     private ObservableList<Transaction> transactionList;
     private ListView<Transaction> transactionListView;
-    private String message;
 
     public Wallet(ComposerConnection composerConnection) {
         transactionList = FXCollections.observableArrayList();
@@ -41,24 +45,35 @@ public class Wallet {
         this.composerConnection = composerConnection;
     }
 
-    public void loadData() {
-        String historianData = composerConnection.getHistorianTransaction();
-        if (historianData == null) {
-            message = "Error! Failed to load transaction history. Please try again later.";
-            return;
-        }
-        try {
-            JSONArray transactionArray = (JSONArray) new JSONParser().parse(historianData);
-            Iterator iterator = transactionArray.iterator();
-            while (iterator.hasNext()) {
-                String transactionData = ((JSONObject) iterator.next()).toJSONString();
-                System.out.println("Historian data element: " + transactionData);
-                Transaction transaction = new Transaction(transactionData);
-                transactionList.add(transaction);
+    public CompletableFuture<Boolean> loadData() {
+        CompletableFuture<Boolean> loadTransactionDataTask = CompletableFuture.supplyAsync(new Supplier<String>() {
+            @Override
+            public String get() {
+                String historianData = composerConnection.getHistorianTransaction();
+                return historianData;
             }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+        }).thenApply(new Function<String, Boolean>() {
+            @Override
+            public Boolean apply(String historianData) {
+                if (historianData != null) {
+                    try {
+                        JSONArray transactionArray = (JSONArray) new JSONParser().parse(historianData);
+                        Iterator iterator = transactionArray.iterator();
+                        while (iterator.hasNext()) {
+                            String transactionData = ((JSONObject) iterator.next()).toJSONString();
+                            System.out.println("Historian data element: " + transactionData);
+                            Transaction transaction = new Transaction(transactionData);
+                            transactionList.add(transaction);
+                        }
+                        return (transactionArray.size() == transactionList.size());
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                return false;
+            }
+        });
+        return loadTransactionDataTask;
     }
 
     public void show() {
@@ -83,10 +98,6 @@ public class Wallet {
                 transactionList.removeAll();
             }
         });
-        if (message != null) {
-            AlertHelper.showAlert(Alert.AlertType.ERROR, walletStage, "Wallet Error", message);
-            walletStage.close();
-        }
     }
 
 

@@ -2,7 +2,14 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="cdb932d9-7e58-4d94-93a9-e7b232ef17da" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ploud/renter/model/Renter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/renter/model/Renter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ploud/renter/model/RenterFile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/renter/model/RenterFile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ploud/rentor/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/rentor/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ploud/rentor/model/Rentor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/rentor/model/Rentor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ploud/rentor/model/RentorFile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/rentor/model/RentorFile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ploud/rentor/util/Wallet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/rentor/util/Wallet.java" afterDir="false" />
     </list>
     <ignored path="JavaFxApplication.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -63,10 +70,10 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/ploud/rentor/model/RentorFile.java">
+        <entry file="file://$PROJECT_DIR$/src/ploud/renter/model/RenterFile.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="438">
-              <caret line="175" column="26" selection-start-line="175" selection-start-column="26" selection-end-line="175" selection-end-column="26" />
+            <state relative-caret-position="-343">
+              <caret line="44" column="46" selection-start-line="44" selection-start-column="46" selection-end-line="44" selection-end-column="46" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -75,10 +82,10 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/ploud/renter/util/ComposerConnection.java">
+        <entry file="file://$PROJECT_DIR$/src/ploud/rentor/model/RentorFile.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="289">
-              <caret line="533" column="36" selection-start-line="533" selection-start-column="24" selection-end-line="533" selection-end-column="36" />
+            <state relative-caret-position="-74">
+              <caret line="67" selection-start-line="67" selection-end-line="67" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -87,34 +94,10 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java">
+        <entry file="file://$PROJECT_DIR$/src/ploud/rentor/model/Rentor.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="279">
-              <caret line="282" column="83" selection-start-line="282" selection-start-column="83" selection-end-line="282" selection-end-column="83" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/ploud/renter/model/Renter.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="50">
-              <caret line="141" column="5" lean-forward="true" selection-start-line="141" selection-start-column="5" selection-end-line="141" selection-end-column="5" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/ploud/renter/model/RenterFile.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="140">
-              <caret line="135" column="39" selection-start-line="135" selection-start-column="39" selection-end-line="135" selection-end-column="39" />
+            <state relative-caret-position="427">
+              <caret line="78" column="33" lean-forward="true" selection-start-line="78" selection-start-column="33" selection-end-line="78" selection-end-column="33" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -200,9 +183,7 @@
         <option value="$PROJECT_DIR$/src/ploud/util/Wallet.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/util/Vault.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/model/Transaction.java" />
-        <option value="$PROJECT_DIR$/src/ploud/rentor/util/Wallet.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/controller/LoginController.java" />
-        <option value="$PROJECT_DIR$/src/ploud/rentor/Main.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/controller/RegisterSpaceController.java" />
         <option value="$PROJECT_DIR$/res/layout/Login.fxml" />
         <option value="$PROJECT_DIR$/res/layout/RegisterSpace.fxml" />
@@ -210,14 +191,16 @@
         <option value="$PROJECT_DIR$/src/ploud/rentor/util/InetAddressTest.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/util/RentorTask.java" />
         <option value="$PROJECT_DIR$/src/ploud/renter/util/RenterSocket.java" />
-        <option value="$PROJECT_DIR$/src/ploud/renter/model/RenterFile.java" />
-        <option value="$PROJECT_DIR$/src/ploud/renter/model/Renter.java" />
         <option value="$PROJECT_DIR$/src/ploud/renter/util/ComposerConnection.java" />
-        <option value="$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/util/ComposerConnection.java" />
+        <option value="$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java" />
+        <option value="$PROJECT_DIR$/src/ploud/rentor/Main.java" />
+        <option value="$PROJECT_DIR$/src/ploud/rentor/util/Wallet.java" />
+        <option value="$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java" />
+        <option value="$PROJECT_DIR$/src/ploud/renter/model/Renter.java" />
+        <option value="$PROJECT_DIR$/src/ploud/renter/model/RenterFile.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/model/RentorFile.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/model/Rentor.java" />
-        <option value="$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java" />
       </list>
     </option>
   </component>
@@ -517,7 +500,7 @@
     <frame x="14" y="23" width="1244" height="777" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.6703755" visible="true" weight="0.21797004" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.6703755" visible="true" weight="0.1655574" />
       <window_info id="Structure" order="1" weight="0.25" />
       <window_info id="Favorites" order="2" />
       <window_info id="Designer" order="3" />
@@ -770,32 +753,10 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/ploud/rentor/util/Vault.java" />
-    <entry file="file://$PROJECT_DIR$/src/ploud/renter/util/Wallet.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="310">
-          <caret line="41" column="5" lean-forward="true" selection-start-line="41" selection-start-column="5" selection-end-line="41" selection-end-column="5" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#3664#3665#0" expanded="true" />
-            <element signature="e#3723#3724#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/ploud/rentor/model/Transaction.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="60">
           <caret line="5" column="13" selection-start-line="5" selection-start-column="13" selection-end-line="5" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/util/Wallet.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-153">
-          <caret line="25" column="13" selection-start-line="25" selection-start-column="13" selection-end-line="25" selection-end-column="13" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -843,18 +804,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/Main.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="545">
-          <caret line="82" lean-forward="true" selection-start-line="82" selection-end-line="82" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#2374#2375#0" expanded="true" />
-            <element signature="e#2433#2434#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/ploud/rentor/util/InetAddressTest.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="288">
@@ -892,16 +841,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/renter/model/Renter.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="50">
-          <caret line="141" column="5" lean-forward="true" selection-start-line="141" selection-start-column="5" selection-end-line="141" selection-end-column="5" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/ploud/renter/util/RenterSocket.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="202">
@@ -923,26 +862,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1836">
-          <caret line="331" column="23" lean-forward="true" selection-start-line="331" selection-start-column="23" selection-end-line="331" selection-end-column="23" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/renter/model/RenterFile.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="140">
-          <caret line="135" column="39" selection-start-line="135" selection-start-column="39" selection-end-line="135" selection-end-column="39" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/ploud/rentor/util/ComposerConnection.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="268">
@@ -950,30 +869,32 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/renter/util/ComposerConnection.java">
+    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/Main.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="289">
-          <caret line="533" column="36" selection-start-line="533" selection-start-column="24" selection-end-line="533" selection-end-column="36" />
+        <state relative-caret-position="168">
+          <caret line="61" column="15" selection-start-line="61" selection-start-column="15" selection-end-line="61" selection-end-column="15" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#2239#2240#0" expanded="true" />
+            <element signature="e#2298#2299#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/util/Wallet.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret line="32" column="50" lean-forward="true" selection-start-line="32" selection-start-column="50" selection-end-line="32" selection-end-column="50" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/model/Rentor.java">
+    <entry file="file://$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="143">
-          <caret line="176" column="43" lean-forward="true" selection-start-line="176" selection-start-column="43" selection-end-line="176" selection-end-column="43" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/model/RentorFile.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="438">
-          <caret line="175" column="26" selection-start-line="175" selection-start-column="26" selection-end-line="175" selection-end-column="26" />
+        <state relative-caret-position="-8075">
+          <caret line="93" column="13" lean-forward="true" selection-start-line="93" selection-start-column="13" selection-end-line="93" selection-end-column="13" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
@@ -982,8 +903,70 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="279">
-          <caret line="282" column="83" selection-start-line="282" selection-start-column="83" selection-end-line="282" selection-end-column="83" />
+        <state relative-caret-position="371">
+          <caret line="488" column="19" selection-start-line="488" selection-start-column="19" selection-end-line="488" selection-end-column="19" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#22352#22353#0" expanded="true" />
+            <element signature="e#22437#22438#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ploud/renter/util/ComposerConnection.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1062">
+          <caret line="533" column="36" selection-start-line="533" selection-start-column="24" selection-end-line="533" selection-end-column="36" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ploud/renter/util/Wallet.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="224">
+          <caret line="41" column="5" lean-forward="true" selection-start-line="41" selection-start-column="5" selection-end-line="41" selection-end-column="5" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ploud/renter/model/Renter.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1075">
+          <caret line="163" column="35" selection-start-line="163" selection-start-column="35" selection-end-line="163" selection-end-column="35" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ploud/renter/model/RenterFile.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-343">
+          <caret line="44" column="46" selection-start-line="44" selection-start-column="46" selection-end-line="44" selection-end-column="46" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/model/RentorFile.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-74">
+          <caret line="67" selection-start-line="67" selection-end-line="67" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/model/Rentor.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="427">
+          <caret line="78" column="33" lean-forward="true" selection-start-line="78" selection-start-column="33" selection-end-line="78" selection-end-column="33" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>

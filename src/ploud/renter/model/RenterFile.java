@@ -43,7 +43,7 @@ public class RenterFile {
     }
 
     public RenterFile(String renterFileData) {
-        System.out.println("Creating new renter file model");
+        hostList = new ArrayList<>();
         try {
             JSONObject renterFile = (JSONObject) new JSONParser().parse(renterFileData);
             String name = (String) renterFile.get("name");
@@ -69,6 +69,29 @@ public class RenterFile {
             ex.printStackTrace();
         }
 
+    }
+
+    public RenterFile(JSONObject renterFileJSON) {
+        hostList = new ArrayList<>();
+        String name = (String) renterFileJSON.get("name");
+        long size = (long) renterFileJSON.get("size");
+        this.name = name;
+        this.size = size;
+
+        setRenderSize(size);
+        String uploadDate = (String) renterFileJSON.get("uploadDate");
+        this.uploadDate = uploadDate;
+
+        String hash = (String) renterFileJSON.get("hash");
+        this.hash = hash;
+
+        JSONArray hostArray = (JSONArray) renterFileJSON.get("hostList");
+        Iterator iterator = hostArray.iterator();
+        while (iterator.hasNext()) {
+            String host = (String) iterator.next();
+            String hostAddress = host.split("#")[1];
+            hostList.add(hostAddress);
+        }
     }
 
     public void setName(String name) {

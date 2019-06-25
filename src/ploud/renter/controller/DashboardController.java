@@ -110,6 +110,8 @@ public class DashboardController implements Initializable {
                         String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
                         spaceUsageLabel.setText(spaceUsageText + " " + renderSpaceUsage);
 
+                        renterFileTable.getItems().addAll(renter.getRenterFiles());
+
                         progressIndicator.setVisible(false);
                         bodyContainer.setDisable(false);
                     }

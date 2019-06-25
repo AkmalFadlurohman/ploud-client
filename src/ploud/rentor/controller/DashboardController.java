@@ -462,9 +462,31 @@ public class DashboardController implements Initializable {
         walletMenu.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
+                Stage primaryStage = (Stage) profileMenu.getScene().getWindow();
+
                 Wallet wallet = new Wallet(composerConnection);
-                wallet.loadData();
-                wallet.show();
+                CompletableFuture<Boolean> loadTransactionDataTask = wallet.loadData();
+                loadTransactionDataTask.thenAccept(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean transactionDataLoaded) {
+                        if (transactionDataLoaded) {
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    wallet.show();
+                                }
+                            });
+                        } else {
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    String message = "Error! Failed to load transaction history. Please try again later.";
+                                    AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Wallet Error", message);
+                                }
+                            });
+                        }
+                    }
+                });
             }
         });
         MenuItem logoutMenu = new MenuItem("Log Out");

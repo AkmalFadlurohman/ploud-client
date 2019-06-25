@@ -63,8 +63,8 @@ public class Renter {
             JSONArray fileList = (JSONArray) renter.get("documents");
             Iterator iterator = fileList.iterator();
             while (iterator.hasNext()) {
-                String renterFileData = (String) iterator.next();
-                RenterFile renterFile = new RenterFile(renterFileData);
+                JSONObject renterFileJSON = (JSONObject) iterator.next();
+                RenterFile renterFile = new RenterFile(renterFileJSON);
                 renterFiles.add(renterFile);
             }
             vault = null;
@@ -146,23 +146,24 @@ public class Renter {
     }
 
     public String toJSON() {
+        String renteClass = "org.ploud.network.Renter";
         JSONObject renter = new JSONObject();
 
-        renter.put("name", name);
-        renter.put("email", email);
-        renter.put("ipAddress", ipAddress);
+        renter.put("$class", renteClass);
         renter.put("spaceUsage", spaceUsage);
-        renter.put("token", token);
+        renter.put("email", email);
+        renter.put("name", name);
+        renter.put("ipAddress", ipAddress);
 
         DateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         renter.put("lastLogin", simpleDateFormat.format(lastLogin));
         renter.put("registerDate", simpleDateFormat.format(registerDate));
 
         JSONArray fileList = new JSONArray();
-        for (RenterFile file : renterFiles) {
-            fileList.add(file.toJSON(email));
+        for (RenterFile renterFile : renterFiles) {
+            fileList.add(renterFile.toJSON(email));
         }
-        renter.put("renterFiles", fileList);
+        renter.put("documents", fileList);
 
         return renter.toJSONString();
     }

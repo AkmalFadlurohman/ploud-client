@@ -38,7 +38,6 @@ public class Main extends Application {
                 email = (String) conf.get("email");
                 String composerAccessToken = (String) conf.get("composerAccessToken");
                 composerConnection = new ComposerConnection(composerAccessToken);
-                composerConnection.updateOnLogin(email);
                 isApplicationAssigned = true;
             }
         }
@@ -50,17 +49,19 @@ public class Main extends Application {
         if (isApplicationAssigned) {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/layout/RentorDashboard.fxml"));
             Parent root = loader.load();
-            DashboardController controller = loader.getController();
-            controller.loadRentorData(composerConnection, email);
 
+            primaryStage.setScene(new Scene(root));
+            primaryStage.show();
+
+            DashboardController controller = loader.getController();
             primaryStage.setOnHidden(new EventHandler<WindowEvent>() {
                 @Override
                 public void handle(WindowEvent windowEvent) {
                     controller.logOut();
                 }
             });
-            primaryStage.setScene(new Scene(root));
-            primaryStage.show();
+            composerConnection.updateOnLogin(email);
+            controller.loadRentorData(composerConnection, email);
         } else {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/layout/Login.fxml"));
             loader.setController(new LoginController());
