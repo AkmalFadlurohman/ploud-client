@@ -13,6 +13,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import ploud.renter.model.RenterFile;
 import ploud.rentor.model.Wallet;
 import ploud.rentor.util.ComposerConnection;
 import ploud.rentor.util.WalletTransaction;
@@ -193,8 +194,21 @@ public class DashboardController implements Initializable {
             }
 
             @Override
-            public void deleteFile(File renterFile) {
-
+            public boolean deleteFile(String renterFileData) {
+                RentorFile rentorFile = new RentorFile(renterFileData);
+                String owner = rentorFile.getOwner();
+                String fileToDeletePath = ploudHomePath + File.separator + owner + File.separator + rentorFile.getHash();
+                File fileToDelete = new File(fileToDeletePath);
+                if (!fileToDelete.exists()) {
+                    System.out.println("Error: " + fileToDeletePath + " does not exist");
+                    return false;
+                }
+                boolean fileDeleted = fileToDelete.delete();
+                if (fileDeleted) {
+                    rentor.getRentorFiles().remove(rentorFile);
+                    rentorFileTable.getItems().remove(rentorFile);
+                }
+                return fileDeleted;
             }
 
             @Override
@@ -205,12 +219,14 @@ public class DashboardController implements Initializable {
                     @Override
                     public String get() {
                         String walletData = composerConnection.getWalletData(rentor.getEmail());
+                        System.out.println("Reloaded wallet data: " + walletData);
                         return walletData;
                     }
                 }).thenAccept(new Consumer<String>() {
                     @Override
                     public void accept(String walletData) {
                         if (walletData != null) {
+                            System.out.println("Reloading wallet data...");
                             rentor.setWallet(new Wallet(walletData));
                             Platform.runLater(new Runnable() {
                                 @Override

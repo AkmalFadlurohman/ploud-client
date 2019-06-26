@@ -342,7 +342,27 @@ public class DashboardController implements Initializable {
             CompletableFuture<Integer> submitRentSpaceTask = submitRentSpace(renterFile, hostList);
             int submitRentSpaceResponse = submitRentSpaceTask.get();
             if (submitRentSpaceResponse != HttpURLConnection.HTTP_OK) {
-                //To do: Delete the already uploaded file in rentor peers
+                for (Rentor host : hostList) {
+                    String hostAddress = host.getIpAddress();
+                    try {
+                        renterSocket = new RenterSocket(hostAddress, port);
+                        renterSocket.start();
+
+                        Future<String> socketListenerResult = renterSocket.sendMessage("fileDelete");
+                        String socketResponse = socketListenerResult.get();
+                        if (socketResponse.equals("OK")) {
+                            socketListenerResult = renterSocket.sendMessage(renterFile.toJSON(renter.getEmail()));
+                            socketResponse = socketListenerResult.get();
+                            if (!socketResponse.equals("Success")) {
+                                System.out.println("Failed to delete uploaded file on ailed RentSpace for host: " + host.getEmail());
+                            }
+                        }
+                    } catch (ExecutionException ex) {
+                        ex.printStackTrace();
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                }
 
                 progressIndicator.setVisible(false);
                 bodyContainer.setDisable(false);
@@ -350,9 +370,8 @@ public class DashboardController implements Initializable {
                 return;
             }
 
-            BigDecimal hostCount = BigDecimal.valueOf(hostList.size());
-            double hostReward = fileSize * 2 / 100000000;
-            System.out.println("Reward/host peer: " + hostReward);
+            BigDecimal hostReward = BigDecimal.valueOf(fileSize).multiply(BigDecimal.valueOf(2)).divide(BigDecimal.valueOf(100000000));
+            System.out.println("Reward/host peer: " + balanceFormat.format(hostReward));
             CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace = transferCoinOnRentSpace(hostList, hostReward);
             transferCoinOnRentSpace.thenAccept(new Consumer<ArrayList<Rentor>>() {
                 @Override
@@ -375,52 +394,39 @@ public class DashboardController implements Initializable {
                             bodyContainer.setDisable(false);
                             AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Upload", renterFile.getName() + "(" + renterFile.getRenderSize()+ ") successfully stored in network.");
                             if (transferCoinFailedHostList.isEmpty()) {
-                                //Notify host peer to reload wallet data and update UI
-                                for (Rentor host : hostList) {
-                                    try {
-                                        String hostAddress = host.getIpAddress();
-                                        renterSocket = new RenterSocket(hostAddress, port);
-                                        renterSocket.start();
-
-                                        Future<String> socketListenerResult = renterSocket.sendMessage("doneFileUpload");
-                                        String socketResponse = socketListenerResult.get();
-                                        if (socketResponse.equals("OK")) {
-                                            BigDecimal currentBalance = renter.getWallet().getBalance();
-                                            BigDecimal newBalance = currentBalance.subtract(BigDecimal.valueOf(hostReward));
-                                            renter.getWallet().setBalance(newBalance);
-                                        }
-                                    } catch (ExecutionException ex) {
-                                        ex.printStackTrace();
-                                    } catch (InterruptedException ex) {
-                                        ex.printStackTrace();
-                                    }
-                                }
+                                System.out.println("Finished file upload process. No failed TransferCoin transaction. Updating wallet balance...");
                                 accountBalanceText.setText("Balance: " + balanceFormat.format(renter.getWallet().getBalance()));
                             }
-                            //Need improvisation
                             if (!transferCoinFailedHostList.isEmpty()) {
                                 uploadButton.setDisable(true);
                                 AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "Transfer Coin Failed", "Failed to transfer coin to one or more rentor peers. Please do not log out or close the application window.");
 
                                 pendingTaskPool= Executors.newFixedThreadPool(5);
                                 pendingTransferCoinCount = transferCoinFailedHostList.size();
+
+                                System.out.println("Creating executor service for resubmitting failed TransferCoin...");
                                 for (Rentor transferCoinFailedHost : transferCoinFailedHostList) {
                                     Future<Integer> pendingTransferCoinFuture = pendingTaskPool.submit(transferCoinOnFailed(transferCoinFailedHost, hostReward));
 
+                                    ScheduledExecutorService pendingTransferCoinPollingService = Executors.newSingleThreadScheduledExecutor();
                                     Runnable pendingTransferCoinPollingTask = new Runnable() {
                                         @Override
                                         public void run() {
                                             if (pendingTransferCoinFuture.isDone()) {
                                                 try {
                                                     int transferCoinResponse = pendingTransferCoinFuture.get();
+                                                    System.out.println("Retry submit TransferCoin transaction response: " + transferCoinResponse);
                                                     if (transferCoinResponse == HttpURLConnection.HTTP_OK) {
                                                         pendingTransferCoinCount--;
+                                                        System.out.println("Pending TransferCoin transaction count: " + pendingTransferCoinCount);
                                                         if (pendingTransferCoinCount == 0) {
                                                             pendingTaskPool.shutdown();
+                                                            pendingTransferCoinPollingService.shutdown();
                                                             Platform.runLater(new Runnable() {
                                                                 @Override
                                                                 public void run() {
                                                                     uploadButton.setDisable(false);
+                                                                    accountBalanceText.setText("Balance: " + balanceFormat.format(renter.getWallet().getBalance()));
                                                                 }
                                                             });
                                                         }
@@ -435,8 +441,7 @@ public class DashboardController implements Initializable {
                                             }
                                         }
                                     };
-                                    ScheduledExecutorService pendingTransferCoinPollingService = Executors.newSingleThreadScheduledExecutor();
-                                    pendingTransferCoinPollingService.schedule(pendingTransferCoinPollingTask, 4, TimeUnit.SECONDS);
+                                    pendingTransferCoinPollingService.scheduleAtFixedRate(pendingTransferCoinPollingTask, 0, 7, TimeUnit.SECONDS);
                                 }
                             }
                         }
@@ -555,7 +560,7 @@ public class DashboardController implements Initializable {
         return submitRentSpaceTask;
     }
 
-    private CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace(ArrayList<Rentor> hostList, double hostReward) {
+    private CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace(ArrayList<Rentor> hostList, BigDecimal hostReward) {
         CompletableFuture<ArrayList<Rentor>> transferCoinTask = CompletableFuture.supplyAsync(new Supplier<ArrayList<Rentor>>() {
             @Override
             public ArrayList<Rentor> get() {
@@ -564,8 +569,27 @@ public class DashboardController implements Initializable {
                 for (Rentor host : hostList) {
                     System.out.println("Submitting TransferCoin transaction on RentSpace for host: " + host.getEmail());
                     String receiverWalletID = host.getWallet().getID();
-                    int transferCoinResponse = composerConnection.transferCoin(senderWalletID, receiverWalletID, hostReward);
-                    if (transferCoinResponse != HttpURLConnection.HTTP_OK) {
+                    int transferCoinResponse = composerConnection.transferCoin(senderWalletID, receiverWalletID, hostReward.doubleValue());
+                    if (transferCoinResponse == HttpURLConnection.HTTP_OK) {
+                        //Notify host peer to reload wallet data and update UI
+                        try {
+                            String hostAddress = host.getIpAddress();
+                            renterSocket = new RenterSocket(hostAddress, port);
+                            renterSocket.start();
+
+                            Future<String> socketListenerResult = renterSocket.sendMessage("doneFileUpload");
+                            String socketResponse = socketListenerResult.get();
+                            if (socketResponse.equals("OK")) {
+                                BigDecimal currentBalance = renter.getWallet().getBalance();
+                                BigDecimal newBalance = currentBalance.subtract(hostReward);
+                                renter.getWallet().setBalance(newBalance);
+                            }
+                        } catch (ExecutionException ex) {
+                            ex.printStackTrace();
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                    } else {
                         transferCoinFailedHostList.add(host);
                     }
                 }
@@ -575,14 +599,33 @@ public class DashboardController implements Initializable {
         return transferCoinTask;
     }
 
-    private Callable<Integer> transferCoinOnFailed(Rentor host, double hostReward) {
+    private Callable<Integer> transferCoinOnFailed(Rentor host, BigDecimal hostReward) {
         Callable<Integer> transferCoinCallable = new Callable<Integer>() {
             @Override
             public Integer call() throws Exception {
                 System.out.println("Submitting TransferCoin transaction on failed transfer for host: " + host.getEmail());
                 String senderWalletID = renter.getWallet().getID();
                 String receiverWalletID = host.getWallet().getID();
-                int transferCoinResponse = composerConnection.transferCoin(senderWalletID, receiverWalletID, hostReward);
+                int transferCoinResponse = composerConnection.transferCoin(senderWalletID, receiverWalletID, hostReward.doubleValue());
+                if (transferCoinResponse == HttpURLConnection.HTTP_OK) {
+                    try {
+                        String hostAddress = host.getIpAddress();
+                        renterSocket = new RenterSocket(hostAddress, port);
+                        renterSocket.start();
+
+                        Future<String> socketListenerResult = renterSocket.sendMessage("doneFileUpload");
+                        String socketResponse = socketListenerResult.get();
+                        if (socketResponse.equals("OK")) {
+                            BigDecimal currentBalance = renter.getWallet().getBalance();
+                            BigDecimal newBalance = currentBalance.subtract(hostReward);
+                            renter.getWallet().setBalance(newBalance);
+                        }
+                    } catch (ExecutionException ex) {
+                        ex.printStackTrace();
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                }
                 return transferCoinResponse;
             }
         };
@@ -708,7 +751,7 @@ public class DashboardController implements Initializable {
     private void setProfileMenu() {
         MenuItem emailMenu = new MenuItem(renter.getEmail());
         emailMenu.setDisable(true);
-        MenuItem walletMenu = new MenuItem("WalletTransaction");
+        MenuItem walletMenu = new MenuItem("Wallet");
         walletMenu.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {

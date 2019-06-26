@@ -156,6 +156,18 @@ public abstract class RentorSocketServer implements RentorTask, Runnable {
                                 } else {
                                     System.out.println("Failed to send the requested file...");
                                 }
+                            } else if (clientMessage.equals("fileDelete")) {
+                                sendMessage("OK");
+                                clientMessage = readerIn.readLine();
+                                String fileDeleteRequest = clientMessage;
+                                boolean fileDeleted = deleteFile(fileDeleteRequest);
+                                if (fileDeleted) {
+                                    System.out.println("Deleted a file from request: " + fileDeleteRequest);
+                                    sendMessage("Success");
+                                } else {
+                                    System.out.println("Failed to delete requested file: " + fileDeleteRequest);
+                                    sendMessage("Failed");
+                                }
                             } else if (clientMessage.equals("doneFileUpload")) {
                                 reloadWallet();
                                 sendMessage("OK");
