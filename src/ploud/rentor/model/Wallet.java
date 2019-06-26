@@ -4,12 +4,13 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import java.math.BigDecimal;
 import java.util.Iterator;
 
 public class Wallet {
     String ID;
     String owner;
-    double balance;
+    BigDecimal balance;
 
     public Wallet(String walletData) {
         try {
@@ -20,10 +21,10 @@ public class Wallet {
             String owner = (String) wallet.get("owner");
             if (wallet.get("balance") instanceof Long) {
                 long balance = (long) wallet.get("balance");
-                this.balance = Long.valueOf(balance).doubleValue();
+                this.balance = BigDecimal.valueOf(balance);
             } else if (wallet.get("balance") instanceof Double) {
                 double balance = (double) wallet.get("balance");
-                this.balance = balance;
+                this.balance = BigDecimal.valueOf(balance);
             }
 
             this.ID = ID;
@@ -44,10 +45,10 @@ public class Wallet {
     public String getOwner() {
         return owner;
     }
-    public void setBalance(double balance) {
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
-    public double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 }

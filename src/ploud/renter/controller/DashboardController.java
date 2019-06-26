@@ -32,10 +32,12 @@ import ploud.renter.util.RenterSocket;
 import ploud.renter.util.ComposerConnection;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.text.DateFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
@@ -67,6 +69,8 @@ public class DashboardController implements Initializable {
     private ComposerConnection composerConnection;
     private ExecutorService pendingTaskPool;
     private static int pendingTransferCoinCount = 0;
+
+    private DecimalFormat balanceFormat = new DecimalFormat("#0.00000000");
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -105,7 +109,7 @@ public class DashboardController implements Initializable {
                     public void run() {
                         setProfileMenu();
                         walletIDText.setText(walletIDText.getText().substring(0, walletIDText.getText().indexOf(":")+1) + " " + renter.getWallet().getID());
-                        accountBalanceText.setText("Balance: " + String.format("%.8f",renter.getWallet().getBalance()));
+                        accountBalanceText.setText("Balance: " + balanceFormat.format(renter.getWallet().getBalance()));
 
                         String renderSpaceUsage = renter.getRenderSpaceUsage();
                         String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
@@ -144,7 +148,7 @@ public class DashboardController implements Initializable {
                     return;
                 }
             }
-            double depositAmount = Double.parseDouble(result.get());
+            BigDecimal depositAmount = new BigDecimal(result.get());
             bodyContainer.setDisable(true);
             progressIndicator.setVisible(true);
             CompletableFuture<Integer> depositBalanceTask = depositBalance(depositAmount);
@@ -152,11 +156,11 @@ public class DashboardController implements Initializable {
                 @Override
                 public void accept(Integer depositBalanceResponse) {
                     if (depositBalanceResponse == HttpURLConnection.HTTP_OK) {
-                        double currentBalance = renter.getWallet().getBalance();
-                        double newBalance = currentBalance + depositAmount;
+                        BigDecimal currentBalance = renter.getWallet().getBalance();
+                        BigDecimal newBalance = currentBalance.add(depositAmount);
                         renter.getWallet().setBalance(newBalance);
-                        accountBalanceText.setText("Balance: " + String.format("%.8f", renter.getWallet().getBalance()));
-                        String message = String.format("%.8f", depositAmount) + " coin successfully added to your wallet (ID: " + renter.getWallet().getID() + ").";
+                        accountBalanceText.setText("Balance: " + balanceFormat.format(renter.getWallet().getBalance()));
+                        String message = balanceFormat.format(depositAmount) + " coin successfully added to your wallet (ID: " + renter.getWallet().getID() + ").";
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -181,13 +185,13 @@ public class DashboardController implements Initializable {
         }
     }
 
-    private CompletableFuture<Integer> depositBalance(double amount) {
+    private CompletableFuture<Integer> depositBalance(BigDecimal amount) {
         System.out.println(amount + " will be added to wallet balance");
         String walletID = renter.getWallet().getID();
         CompletableFuture<Integer> depositBalanceTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
             @Override
             public Integer get() {
-                int depositBalanceResponse = composerConnection.depositCoin(walletID, amount);
+                int depositBalanceResponse = composerConnection.depositCoin(walletID, amount.doubleValue());
                 return depositBalanceResponse;
             }
         });
@@ -217,9 +221,9 @@ public class DashboardController implements Initializable {
                     return;
                 }
             }
-            double withdrawAmount = Double.parseDouble(result.get());
-            double currentBalance = renter.getWallet().getBalance();
-            if (withdrawAmount > currentBalance) {
+            BigDecimal withdrawAmount = new BigDecimal(result.get());
+            BigDecimal currentBalance = renter.getWallet().getBalance();
+            if (withdrawAmount.compareTo(currentBalance) > 0) {
                 String message = "Insufficient balance.";
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, dialogTitle, message);
                 return;
@@ -231,11 +235,11 @@ public class DashboardController implements Initializable {
                 @Override
                 public void accept(Integer withdrawBalanceResponse) {
                     if (withdrawBalanceResponse == HttpURLConnection.HTTP_OK) {
-                        double currentBalance = renter.getWallet().getBalance();
-                        double newBalance = currentBalance - withdrawAmount;
+                        BigDecimal currentBalance = renter.getWallet().getBalance();
+                        BigDecimal newBalance = currentBalance.subtract(withdrawAmount);
                         renter.getWallet().setBalance(newBalance);
-                        accountBalanceText.setText("Balance: " + String.format("%.8f", renter.getWallet().getBalance()));
-                        String message = String.format("%.8f", withdrawAmount) + " coin successfully withdrew from your wallet (ID: " + renter.getWallet().getID() + ").";
+                        accountBalanceText.setText("Balance: " + balanceFormat.format(renter.getWallet().getBalance()));
+                        String message = balanceFormat.format(withdrawAmount) + " coin successfully withdrew from your wallet (ID: " + renter.getWallet().getID() + ").";
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -259,13 +263,13 @@ public class DashboardController implements Initializable {
             });
         }
     }
-    private CompletableFuture<Integer> withdrawBalance(double amount) {
+    private CompletableFuture<Integer> withdrawBalance(BigDecimal amount) {
         System.out.println(amount + " will be subtracted from wallet balance");
         String walletID = renter.getWallet().getID();
         CompletableFuture<Integer> withdrawBalanceTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
             @Override
             public Integer get() {
-                int withdrawBalanceResponse = composerConnection.withdrawCoin(walletID, amount);
+                int withdrawBalanceResponse = composerConnection.withdrawCoin(walletID, amount.doubleValue());
                 return withdrawBalanceResponse;
             }
         });
@@ -294,8 +298,8 @@ public class DashboardController implements Initializable {
                 return;
             }
             long fileSize = selectedFile.length();
-            double price = (Long.valueOf(fileSize).doubleValue() * 2 * 2) / 100000000;
-            if (renter.getWallet().getBalance() < price) {
+            BigDecimal price = BigDecimal.valueOf((Long.valueOf(fileSize).doubleValue() * 2 * 2) / 100000000);
+            if (renter.getWallet().getBalance().compareTo(price) < 0) {
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", "Insufficient balance! Please deposit the approximate price: " + String.format("%.8f", price) + " for RentSpace transaction to upload the file.");
                 return;
             }
@@ -346,9 +350,9 @@ public class DashboardController implements Initializable {
                 return;
             }
 
-            double hostCount = Integer.valueOf(hostList.size()).doubleValue();
-            double hostReward = fileSize * 2 * hostCount / 100000000;
-            System.out.println("Reward/host: " + hostReward);
+            BigDecimal hostCount = BigDecimal.valueOf(hostList.size());
+            double hostReward = fileSize * 2 / 100000000;
+            System.out.println("Reward/host peer: " + hostReward);
             CompletableFuture<ArrayList<Rentor>> transferCoinOnRentSpace = transferCoinOnRentSpace(hostList, hostReward);
             transferCoinOnRentSpace.thenAccept(new Consumer<ArrayList<Rentor>>() {
                 @Override
@@ -370,6 +374,13 @@ public class DashboardController implements Initializable {
                             progressIndicator.setVisible(false);
                             bodyContainer.setDisable(false);
                             AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Upload", renterFile.getName() + "(" + renterFile.getRenderSize()+ ") successfully stored in network.");
+                            if (transferCoinFailedHostList.isEmpty()) {
+                                //Substract wallet balance
+                                BigDecimal currentBalance = renter.getWallet().getBalance();
+                                BigDecimal newBalance = currentBalance.subtract(BigDecimal.valueOf(hostReward).multiply(hostCount));
+                                renter.getWallet().setBalance(newBalance);
+                                accountBalanceText.setText("Balance: " + balanceFormat.format(renter.getWallet().getBalance()));
+                            }
                             if (!transferCoinFailedHostList.isEmpty()) {
                                 uploadButton.setDisable(true);
                                 AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "Transfer Coin Failed", "Failed to transfer coin to one or more rentor peers. Please do not log out or close the application window.");
