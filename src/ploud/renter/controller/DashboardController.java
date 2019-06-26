@@ -458,7 +458,8 @@ public class DashboardController implements Initializable {
                     JSONArray availableRentor = (JSONArray) new JSONParser().parse(availableRentorData);
 
                     Iterator iterator = availableRentor.iterator();
-                    while (iterator.hasNext() && candidateHostCount < 3) {
+                    //Limit host to 3 peers
+                    while (iterator.hasNext()) {
                         JSONObject rentorObject = (JSONObject) iterator.next();
                         String rentorData = rentorObject.toJSONString();
                         Rentor rentor = new Rentor(rentorData);
@@ -467,6 +468,9 @@ public class DashboardController implements Initializable {
                         if (rentor.getLastOnline().toInstant().plusSeconds((long) 5*60).isAfter(currentTime.toInstant())) {
                             candidateHostCount++;
                             candidateHostList.add(rentor);
+                            if (candidateHostCount == 3) {
+                                break;
+                            }
                         }
                     }
                     return candidateHostList;

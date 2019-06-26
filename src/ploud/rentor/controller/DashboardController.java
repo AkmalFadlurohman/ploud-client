@@ -199,9 +199,30 @@ public class DashboardController implements Initializable {
 
             @Override
             public synchronized void reloadWallet() {
-                String walletData = composerConnection.getWalletData(rentor.getEmail());
-                rentor.setWallet(new Wallet(walletData));
-                accountBalanceText.setText("Balance: " + balanceFormat.format(rentor.getWallet().getBalance()));
+                bodyContainer.setDisable(true);
+                progressIndicator.setVisible(true);
+                CompletableFuture.supplyAsync(new Supplier<String>() {
+                    @Override
+                    public String get() {
+                        String walletData = composerConnection.getWalletData(rentor.getEmail());
+                        return walletData;
+                    }
+                }).thenAccept(new Consumer<String>() {
+                    @Override
+                    public void accept(String walletData) {
+                        if (walletData != null) {
+                            rentor.setWallet(new Wallet(walletData));
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    accountBalanceText.setText("Balance: " + balanceFormat.format(rentor.getWallet().getBalance()));
+                                    progressIndicator.setVisible(false);
+                                    bodyContainer.setDisable(false);
+                                }
+                            });
+                        }
+                    }
+                });
             }
         };
         rentorSocketServer.start();
