@@ -6,24 +6,17 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import ploud.renter.model.Renter;
-import ploud.rentor.model.Vault;
+import ploud.rentor.model.Wallet;
 import ploud.rentor.util.ComposerConnection;
-import ploud.rentor.util.Wallet;
+import ploud.rentor.util.WalletTransaction;
 import ploud.util.AlertHelper;
-import ploud.renter.model.RenterFile;
 import ploud.rentor.model.Rentor;
 import ploud.rentor.model.RentorFile;
 import ploud.rentor.util.RentorSocketServer;
@@ -32,8 +25,6 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
@@ -47,7 +38,7 @@ public class DashboardController implements Initializable {
     @FXML
     private MenuButton profileMenu;
     @FXML
-    private Text vaultIDText;
+    private Text walletIDText;
     @FXML
     private Text accountBalanceText;
     @FXML
@@ -219,22 +210,22 @@ public class DashboardController implements Initializable {
             @Override
             public String apply(String rentorData) {
                 rentor = new Rentor(rentorData);
-                String vaultData = composerConnection.getVaultData(email);
-                return vaultData;
+                String walletData = composerConnection.getWalletData(email);
+                return walletData;
             }
         });
 
         rentorDataLoadTask.thenAccept(new Consumer<String>() {
             @Override
-            public void accept(String vaultData) {
-                rentor.setVault(new Vault(vaultData));
+            public void accept(String walletData) {
+                rentor.setWallet(new Wallet(walletData));
 
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
                         setProfileMenu();
-                        vaultIDText.setText(vaultIDText.getText().substring(0, vaultIDText.getText().indexOf(":")+1) + " " + rentor.getVault().getID());
-                        accountBalanceText.setText("Balance: " + String.format("%.8f",rentor.getVault().getBalance()));
+                        walletIDText.setText(walletIDText.getText().substring(0, walletIDText.getText().indexOf(":")+1) + " " + rentor.getWallet().getID());
+                        accountBalanceText.setText("Balance: " + String.format("%.8f",rentor.getWallet().getBalance()));
                         setSpaceOccupancy();
 
                         rentorFileTable.getItems().addAll(rentor.getRentorFiles());
@@ -249,7 +240,7 @@ public class DashboardController implements Initializable {
         serverPollingTask = new Timeline(new KeyFrame(Duration.seconds(20), new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                //System.out.println("Polling server to update lastOnline data and retrieve newest vault data...");
+                //System.out.println("Polling server to update lastOnline data and retrieve newest wallet data...");
                 rentor.setLastOnline(new Date());
                 int updateLastOnlineResponse = composerConnection.updateLastOnline(rentor);
                 if (updateLastOnlineResponse != HttpsURLConnection.HTTP_OK) {
@@ -292,11 +283,11 @@ public class DashboardController implements Initializable {
                 @Override
                 public void accept(Integer depositBalanceResponse) {
                     if (depositBalanceResponse == HttpURLConnection.HTTP_OK) {
-                        double currentBalance = rentor.getVault().getBalance();
+                        double currentBalance = rentor.getWallet().getBalance();
                         double newBalance = currentBalance + depositAmount;
-                        rentor.getVault().setBalance(newBalance);
-                        accountBalanceText.setText("Balance: " + String.format("%.8f", rentor.getVault().getBalance()));
-                        String message = String.format("%.8f", depositAmount) + " coin successfully added to your vault (ID: " + rentor.getVault().getID() + ").";
+                        rentor.getWallet().setBalance(newBalance);
+                        accountBalanceText.setText("Balance: " + String.format("%.8f", rentor.getWallet().getBalance()));
+                        String message = String.format("%.8f", depositAmount) + " coin successfully added to your wallet (ID: " + rentor.getWallet().getID() + ").";
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -322,12 +313,12 @@ public class DashboardController implements Initializable {
     }
 
     private CompletableFuture<Integer> depositBalance(double amount) {
-        System.out.println(amount + " will be added to vault balance");
-        String vaultID = rentor.getVault().getID();
+        System.out.println(amount + " will be added to wallet balance");
+        String walletID = rentor.getWallet().getID();
         CompletableFuture<Integer> depositBalanceTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
             @Override
             public Integer get() {
-                int depositBalanceResponse = composerConnection.depositCoin(vaultID, amount);
+                int depositBalanceResponse = composerConnection.depositCoin(walletID, amount);
                 return Integer.valueOf(depositBalanceResponse);
             }
         });
@@ -358,7 +349,7 @@ public class DashboardController implements Initializable {
                 }
             }
             double withdrawAmount = Double.parseDouble(result.get());
-            double currentBalance = rentor.getVault().getBalance();
+            double currentBalance = rentor.getWallet().getBalance();
             if (withdrawAmount > currentBalance) {
                 String message = "Insufficient balance.";
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, dialogTitle, message);
@@ -371,11 +362,11 @@ public class DashboardController implements Initializable {
                 @Override
                 public void accept(Integer withdrawBalanceResponse) {
                     if (withdrawBalanceResponse == HttpURLConnection.HTTP_OK) {
-                        double currentBalance = rentor.getVault().getBalance();
+                        double currentBalance = rentor.getWallet().getBalance();
                         double newBalance = currentBalance - withdrawAmount;
-                        rentor.getVault().setBalance(newBalance);
-                        accountBalanceText.setText("Balance: " + String.format("%.8f", rentor.getVault().getBalance()));
-                        String message = String.format("%.8f", withdrawAmount) + " coin successfully withdrew from your vault vault (ID: " + rentor.getVault().getID() + ").";
+                        rentor.getWallet().setBalance(newBalance);
+                        accountBalanceText.setText("Balance: " + String.format("%.8f", rentor.getWallet().getBalance()));
+                        String message = String.format("%.8f", withdrawAmount) + " coin successfully withdrew from your wallet (ID: " + rentor.getWallet().getID() + ").";
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -400,12 +391,12 @@ public class DashboardController implements Initializable {
         }
     }
     private CompletableFuture<Integer> withdrawBalance(double amount) {
-        System.out.println(amount + " will be subtracted from vault balance");
-        String vaultID = rentor.getVault().getID();
+        System.out.println(amount + " will be subtracted from wallet balance");
+        String walletID = rentor.getWallet().getID();
         CompletableFuture<Integer> withdrawBalanceTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
             @Override
             public Integer get() {
-                int withdrawBalanceResponse = composerConnection.withdrawCoin(vaultID, amount);
+                int withdrawBalanceResponse = composerConnection.withdrawCoin(walletID, amount);
                 return Integer.valueOf(withdrawBalanceResponse);
             }
         });
@@ -420,9 +411,11 @@ public class DashboardController implements Initializable {
             @Override
             public void handle(ActionEvent event) {
                 Stage primaryStage = (Stage) profileMenu.getScene().getWindow();
+                bodyContainer.setDisable(true);
+                progressIndicator.setVisible(true);
 
-                Wallet wallet = new Wallet(composerConnection);
-                CompletableFuture<Boolean> loadTransactionDataTask = wallet.loadData();
+                WalletTransaction walletTransaction = new WalletTransaction(composerConnection);
+                CompletableFuture<Boolean> loadTransactionDataTask = walletTransaction.loadData(rentor.getEmail());
                 loadTransactionDataTask.thenAccept(new Consumer<Boolean>() {
                     @Override
                     public void accept(Boolean transactionDataLoaded) {
@@ -430,15 +423,19 @@ public class DashboardController implements Initializable {
                             Platform.runLater(new Runnable() {
                                 @Override
                                 public void run() {
-                                    wallet.show();
+                                    progressIndicator.setVisible(false);
+                                    bodyContainer.setDisable(false);
+                                    walletTransaction.show();
                                 }
                             });
                         } else {
                             Platform.runLater(new Runnable() {
                                 @Override
                                 public void run() {
+                                    progressIndicator.setVisible(false);
+                                    bodyContainer.setDisable(false);
                                     String message = "Error! Failed to load transaction history. Please try again later.";
-                                    AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Wallet Error", message);
+                                    AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "WalletTransaction Error", message);
                                 }
                             });
                         }

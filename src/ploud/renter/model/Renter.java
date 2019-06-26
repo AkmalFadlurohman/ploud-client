@@ -21,7 +21,7 @@ public class Renter {
     private Date lastLogin;
     private Date registerDate;
     private ArrayList<RenterFile> renterFiles;
-    private Vault vault;
+    private Wallet wallet;
 
     public Renter() {
         renterFiles = new ArrayList<>();
@@ -67,7 +67,7 @@ public class Renter {
                 RenterFile renterFile = new RenterFile(renterFileJSON);
                 renterFiles.add(renterFile);
             }
-            vault = null;
+            wallet = null;
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -137,12 +137,12 @@ public class Renter {
         return renterFiles;
     }
 
-    public void setVault(Vault vault) {
-        this.vault = vault;
+    public void setWallet(Wallet wallet) {
+        this.wallet = wallet;
     }
 
-    public Vault getVault() {
-        return vault;
+    public Wallet getWallet() {
+        return wallet;
     }
 
     public String toJSON() {
@@ -181,7 +181,7 @@ public class Renter {
     }
 
     private String getSizeBytes(long spaceSize) {
-        return spaceSize + " byte";
+        return spaceSize + " B";
     }
 
     private String getSizeKiloBytes(long spaceSize) {

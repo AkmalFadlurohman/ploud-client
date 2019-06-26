@@ -81,9 +81,9 @@ public class LoginController {
                             AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "System Error", "Failed to register new rentor to the Ploud Network. Please try again later.");
                             return;
                         }
-                        int createVaultResponse = composerConnection.createRentorVault(email);
+                        int createVaultResponse = composerConnection.createRentorWallet(email);
                         if (createVaultResponse != HttpURLConnection.HTTP_OK) {
-                            AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "System Error", "Failed to create new vault asset for rentor. Please try again later.");
+                            AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "System Error", "Failed to create new wallet for rentor. Please try again later.");
                             return;
                         }
                         File businessCard = composerConnection.issueIdentity(email);

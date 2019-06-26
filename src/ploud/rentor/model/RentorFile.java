@@ -129,9 +129,9 @@ public class RentorFile {
     }
 
     public void setRenderSize(long fileSize) {
-        if (fileSize < 1024) {
+        if (fileSize < 1000) {
             this.renderSize = getFileSizeBytes(fileSize);
-        } else if (fileSize < (1024*1024)) {
+        } else if (fileSize < (1000*1000)) {
             this.renderSize = getFileSizeKiloBytes(fileSize);
         } else {
             this.renderSize = getFileSizeMegaBytes(fileSize);

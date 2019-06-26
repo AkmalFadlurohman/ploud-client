@@ -6,23 +6,23 @@ import org.json.simple.parser.JSONParser;
 
 import java.util.Iterator;
 
-public class Vault {
+public class Wallet {
     String ID;
     String owner;
     double balance;
 
-    public Vault(String vaultData) {
+    public Wallet(String walletData) {
         try {
-            JSONArray vaultList = (JSONArray) new JSONParser().parse(vaultData);
-            Iterator iterator = vaultList.iterator();
-            JSONObject vault = (JSONObject) iterator.next();
-            String ID = (String) vault.get("id");
-            String owner = (String) vault.get("owner");
-            if (vault.get("balance") instanceof Long) {
-                long balance = (long) vault.get("balance");
+            JSONArray walletList = (JSONArray) new JSONParser().parse(walletData);
+            Iterator iterator = walletList.iterator();
+            JSONObject wallet = (JSONObject) iterator.next();
+            String ID = (String) wallet.get("id");
+            String owner = (String) wallet.get("owner");
+            if (wallet.get("balance") instanceof Long) {
+                long balance = (long) wallet.get("balance");
                 this.balance = Long.valueOf(balance).doubleValue();
-            } else if (vault.get("balance") instanceof Double) {
-                double balance = (double) vault.get("balance");
+            } else if (wallet.get("balance") instanceof Double) {
+                double balance = (double) wallet.get("balance");
                 this.balance = balance;
             }
 

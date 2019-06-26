@@ -19,13 +19,12 @@ import javafx.scene.text.TextAlignment;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import javafx.util.Pair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import ploud.renter.model.Vault;
-import ploud.renter.util.Wallet;
+import ploud.renter.model.Wallet;
 import ploud.rentor.model.Rentor;
+import ploud.renter.util.WalletTransaction;
 import ploud.util.AlertHelper;
 import ploud.renter.model.Renter;
 import ploud.renter.model.RenterFile;
@@ -48,7 +47,7 @@ public class DashboardController implements Initializable {
     @FXML
     private MenuButton profileMenu;
     @FXML
-    private Text vaultIDText;
+    private Text walletIDText;
     @FXML
     private Text accountBalanceText;
     @FXML
@@ -91,22 +90,22 @@ public class DashboardController implements Initializable {
             @Override
             public String apply(String renterData) {
                 renter = new Renter((renterData));
-                String vaultData = composerConnection.getVaultData(email);
-                return vaultData;
+                String walletData = composerConnection.getRenterWalletData(email);
+                return walletData;
             }
         });
 
         renterDataLoadTask.thenAccept(new Consumer<String>() {
             @Override
-            public void accept(String vaultData) {
-                renter.setVault(new Vault(vaultData));
+            public void accept(String walletData) {
+                renter.setWallet(new Wallet(walletData));
 
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
                         setProfileMenu();
-                        vaultIDText.setText(vaultIDText.getText().substring(0, vaultIDText.getText().indexOf(":")+1) + " " + renter.getVault().getID());
-                        accountBalanceText.setText("Balance: " + String.format("%.8f",renter.getVault().getBalance()));
+                        walletIDText.setText(walletIDText.getText().substring(0, walletIDText.getText().indexOf(":")+1) + " " + renter.getWallet().getID());
+                        accountBalanceText.setText("Balance: " + String.format("%.8f",renter.getWallet().getBalance()));
 
                         String renderSpaceUsage = renter.getRenderSpaceUsage();
                         String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
@@ -153,11 +152,11 @@ public class DashboardController implements Initializable {
                 @Override
                 public void accept(Integer depositBalanceResponse) {
                     if (depositBalanceResponse == HttpURLConnection.HTTP_OK) {
-                        double currentBalance = renter.getVault().getBalance();
+                        double currentBalance = renter.getWallet().getBalance();
                         double newBalance = currentBalance + depositAmount;
-                        renter.getVault().setBalance(newBalance);
-                        accountBalanceText.setText("Balance: " + String.format("%.8f", renter.getVault().getBalance()));
-                        String message = String.format("%.8f", depositAmount) + " coin successfully added to your vault (ID: " + renter.getVault().getID() + ").";
+                        renter.getWallet().setBalance(newBalance);
+                        accountBalanceText.setText("Balance: " + String.format("%.8f", renter.getWallet().getBalance()));
+                        String message = String.format("%.8f", depositAmount) + " coin successfully added to your wallet (ID: " + renter.getWallet().getID() + ").";
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -183,12 +182,12 @@ public class DashboardController implements Initializable {
     }
 
     private CompletableFuture<Integer> depositBalance(double amount) {
-        System.out.println(amount + " will be added to vault balance");
-        String vaultID = renter.getVault().getID();
+        System.out.println(amount + " will be added to wallet balance");
+        String walletID = renter.getWallet().getID();
         CompletableFuture<Integer> depositBalanceTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
             @Override
             public Integer get() {
-                int depositBalanceResponse = composerConnection.depositCoin(vaultID, amount);
+                int depositBalanceResponse = composerConnection.depositCoin(walletID, amount);
                 return depositBalanceResponse;
             }
         });
@@ -219,7 +218,7 @@ public class DashboardController implements Initializable {
                 }
             }
             double withdrawAmount = Double.parseDouble(result.get());
-            double currentBalance = renter.getVault().getBalance();
+            double currentBalance = renter.getWallet().getBalance();
             if (withdrawAmount > currentBalance) {
                 String message = "Insufficient balance.";
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, dialogTitle, message);
@@ -232,11 +231,11 @@ public class DashboardController implements Initializable {
                 @Override
                 public void accept(Integer withdrawBalanceResponse) {
                     if (withdrawBalanceResponse == HttpURLConnection.HTTP_OK) {
-                        double currentBalance = renter.getVault().getBalance();
+                        double currentBalance = renter.getWallet().getBalance();
                         double newBalance = currentBalance - withdrawAmount;
-                        renter.getVault().setBalance(newBalance);
-                        accountBalanceText.setText("Balance: " + String.format("%.8f", renter.getVault().getBalance()));
-                        String message = String.format("%.8f", withdrawAmount) + " coin successfully withdrew from your vault vault (ID: " + renter.getVault().getID() + ").";
+                        renter.getWallet().setBalance(newBalance);
+                        accountBalanceText.setText("Balance: " + String.format("%.8f", renter.getWallet().getBalance()));
+                        String message = String.format("%.8f", withdrawAmount) + " coin successfully withdrew from your wallet (ID: " + renter.getWallet().getID() + ").";
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
@@ -261,12 +260,12 @@ public class DashboardController implements Initializable {
         }
     }
     private CompletableFuture<Integer> withdrawBalance(double amount) {
-        System.out.println(amount + " will be subtracted from vault balance");
-        String vaultID = renter.getVault().getID();
+        System.out.println(amount + " will be subtracted from wallet balance");
+        String walletID = renter.getWallet().getID();
         CompletableFuture<Integer> withdrawBalanceTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
             @Override
             public Integer get() {
-                int withdrawBalanceResponse = composerConnection.withdrawCoin(vaultID, amount);
+                int withdrawBalanceResponse = composerConnection.withdrawCoin(walletID, amount);
                 return withdrawBalanceResponse;
             }
         });
@@ -296,7 +295,7 @@ public class DashboardController implements Initializable {
             }
             long fileSize = selectedFile.length();
             double price = (Long.valueOf(fileSize).doubleValue() * 2 * 2) / 100000000;
-            if (renter.getVault().getBalance() < price) {
+            if (renter.getWallet().getBalance() < price) {
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", "Insufficient balance! Please deposit the approximate price: " + String.format("%.8f", price) + " for RentSpace transaction to upload the file.");
                 return;
             }
@@ -493,9 +492,9 @@ public class DashboardController implements Initializable {
                         String fileUploadResponse = socketFileUploadTask.get();
                         if (fileUploadResponse.equals("Success")) {
                             successCount++;
-                            String rentorVaultData = composerConnection.getRentorVaultData(candidateHostEmail);
-                            if (rentorVaultData != null) {
-                                candidateHost.setVault(new ploud.rentor.model.Vault(rentorVaultData));
+                            String rentorWalletData = composerConnection.getRentorWalletData(candidateHostEmail);
+                            if (rentorWalletData != null) {
+                                candidateHost.setWallet(new ploud.rentor.model.Wallet(rentorWalletData));
                                 hostList.add(candidateHost);
                             }
                         }
@@ -529,11 +528,11 @@ public class DashboardController implements Initializable {
             @Override
             public ArrayList<Rentor> get() {
                 ArrayList<Rentor> transferCoinFailedHostList = new ArrayList<>();
-                String senderVaultID = renter.getVault().getID();
+                String senderWalletID = renter.getWallet().getID();
                 for (Rentor host : hostList) {
                     System.out.println("Submitting TransferCoin transaction on RentSpace for host: " + host.getEmail());
-                    String receiverVaultID = host.getVault().getID();
-                    int transferCoinResponse = composerConnection.transferCoin(senderVaultID, receiverVaultID, hostReward);
+                    String receiverWalletID = host.getWallet().getID();
+                    int transferCoinResponse = composerConnection.transferCoin(senderWalletID, receiverWalletID, hostReward);
                     if (transferCoinResponse != HttpURLConnection.HTTP_OK) {
                         transferCoinFailedHostList.add(host);
                     }
@@ -549,9 +548,9 @@ public class DashboardController implements Initializable {
             @Override
             public Integer call() throws Exception {
                 System.out.println("Submitting TransferCoin transaction on failed transfer for host: " + host.getEmail());
-                String senderVaultID = renter.getVault().getID();
-                String receiverVaultID = host.getVault().getID();
-                int transferCoinResponse = composerConnection.transferCoin(senderVaultID, receiverVaultID, hostReward);
+                String senderWalletID = renter.getWallet().getID();
+                String receiverWalletID = host.getWallet().getID();
+                int transferCoinResponse = composerConnection.transferCoin(senderWalletID, receiverWalletID, hostReward);
                 return transferCoinResponse;
             }
         };
@@ -616,7 +615,7 @@ public class DashboardController implements Initializable {
                     Rentor host = new Rentor(rentorData);
 
                     //Check if host lastOnline time is in 5 minutes range
-                    if (host.getLastOnline().toInstant().plusSeconds((long) 5*60).isAfter(currentTime.toInstant())) {
+                    if (host.getLastOnline().toInstant().plusSeconds((long) 3*60).isAfter(currentTime.toInstant())) {
                         String hostAddress = host.getIpAddress();
                         int port = 8089;
                         renterSocket = new RenterSocket(hostAddress, port);
@@ -626,7 +625,6 @@ public class DashboardController implements Initializable {
                             Future<String> socketListenerTask = renterSocket.sendMessage("fileDownload");
                             String socketResponse = socketListenerTask.get();
                             if (socketResponse.equals("OK")) {
-                                //socketListenerTask = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + selectedFile.toJSON(renter.getEmail()));
                                 socketListenerTask = renterSocket.sendMessage(selectedFile.toJSON(renter.getEmail()));
                                 socketResponse = socketListenerTask.get();
                                 if (socketResponse.equals("prepareFileReceive")) {
@@ -678,13 +676,41 @@ public class DashboardController implements Initializable {
     private void setProfileMenu() {
         MenuItem emailMenu = new MenuItem(renter.getEmail());
         emailMenu.setDisable(true);
-        MenuItem walletMenu = new MenuItem("Wallet");
+        MenuItem walletMenu = new MenuItem("WalletTransaction");
         walletMenu.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                Wallet wallet = new Wallet(composerConnection);
-                wallet.loadData();
-                wallet.show();
+                Stage primaryStage = (Stage) profileMenu.getScene().getWindow();
+                bodyContainer.setDisable(true);
+                progressIndicator.setVisible(true);
+
+                WalletTransaction walletTransaction = new WalletTransaction(composerConnection);
+                CompletableFuture<Boolean> loadTransactionDataTask = walletTransaction.loadData(renter.getEmail());
+                loadTransactionDataTask.thenAccept(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean transactionDataLoaded) {
+                        if (transactionDataLoaded) {
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressIndicator.setVisible(false);
+                                    bodyContainer.setDisable(false);
+                                    walletTransaction.show();
+                                }
+                            });
+                        } else {
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    progressIndicator.setVisible(false);
+                                    bodyContainer.setDisable(false);
+                                    String message = "Error! Failed to load transaction history. Please try again later.";
+                                    AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "WalletTransaction Error", message);
+                                }
+                            });
+                        }
+                    }
+                });
             }
         });
 

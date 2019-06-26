@@ -49,7 +49,7 @@
                 <AnchorPane minHeight="-Infinity" minWidth="-Infinity" prefHeight="30" prefWidth="800" style="-fx-background-color: #ececec;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="100">
                     <children>
                         <HBox alignment="CENTER" prefHeight="25" prefWidth="450" spacing="5" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="1" AnchorPane.bottomAnchor="1">
-                            <Text fx:id="vaultIDText" text="Vault ID: 0000" textAlignment="CENTER">
+                            <Text fx:id="walletIDText" text="Wallet ID: 0000" textAlignment="CENTER">
                                 <font>
                                     <Font size="12.0" />
                                 </font>

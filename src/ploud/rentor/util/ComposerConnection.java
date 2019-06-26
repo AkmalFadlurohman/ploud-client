@@ -24,7 +24,7 @@ public class ComposerConnection {
 
     private String rentorAddress = composerAPI + "/Rentor";
     private String rentorAuthAddress = composerAuthAPI + "/Rentor";
-    private String vaultAddress = composerAPI + "/Vault";
+    private String walletAddress = composerAPI + "/Wallet";
     private String registerSpaceAddress = composerAuthAPI + "/RegisterSpace";
     private String depositCoinAddress = composerAuthAPI + "/DepositCoin";
     private String withdrawCoinAddress = composerAuthAPI + "/WithdrawCoin";
@@ -32,7 +32,7 @@ public class ComposerConnection {
     private String networkName = "@ploud-network";
     private String nameSpace = "org.ploud.network";
     private String rentorClass = nameSpace + ".Rentor";
-    private String vaultClass = nameSpace + ".Vault";
+    private String walletClass = nameSpace + ".Wallet";
     private String registerSpaceClass = nameSpace + ".RegisterSpace";
     private String depositCoinClass = nameSpace + ".DepositCoin";
     private String withdrawCoinClass = nameSpace + ".WithdrawCoin";
@@ -139,19 +139,20 @@ public class ComposerConnection {
         return null;
     }
 
-    public int createRentorVault(String email){
-        int vaultID = ThreadLocalRandom.current().nextInt(1000,  10000);
+    public int createRentorWallet(String email){
+        int walletID = ThreadLocalRandom.current().nextInt(1000,  10000);
         String owner = "resource:" + rentorClass + "#" + email;
-        JSONObject vault = new JSONObject();
-        vault.put("$class", vaultClass);
-        vault.put("id", vaultID);
-        vault.put("balance", 0.00);
-        vault.put("owner", owner);
+        JSONObject wallet = new JSONObject();
+        wallet.put("$class", walletClass);
+        wallet.put("id", walletID);
+        wallet.put("balance", 0.00);
+        wallet.put("owner", owner);
+        wallet.put("transactions", new JSONArray());
 
-        String body = vault.toJSONString();
-        System.out.println("Sending create vault request: " + body);
+        String body = wallet.toJSONString();
+        System.out.println("Sending create wallet request: " + body);
         try {
-            URL urlAddress = new URL(vaultAddress);
+            URL urlAddress = new URL(walletAddress);
             HttpURLConnection httpPost = (HttpURLConnection) urlAddress.openConnection();
 
             httpPost.setRequestMethod("POST");
@@ -163,7 +164,7 @@ public class ComposerConnection {
             streamOut.flush();
 
             int responseCode = httpPost.getResponseCode();
-            System.out.println("Create vault response code: " + responseCode);
+            System.out.println("Create wallet response code: " + responseCode);
             streamOut.close();
             httpPost.disconnect();
             return responseCode;
@@ -368,12 +369,12 @@ public class ComposerConnection {
         return null;
     }
 
-    public String getVaultData(String email) {
+    public String getWalletData(String email) {
         try {
             String owner = "resource:" + rentorClass + "#" + email;
             String param = URLEncoder.encode(owner, "UTF-8");
-            String address = composerAuthAPI + "/queries/selectVaultByOwner?owner=" + param;
-            System.out.println("Get vault data address: " + address);
+            String address = composerAuthAPI + "/queries/selectWalletByOwner?owner=" + param;
+            System.out.println("Get wallet data address: " + address);
 
             URL urlAddress = new URL(address);
             HttpURLConnection httpGet = (HttpURLConnection) urlAddress.openConnection();
@@ -383,7 +384,7 @@ public class ComposerConnection {
             httpGet.setDoInput(true);
 
             int responseCode = httpGet.getResponseCode();
-            System.out.println("Get vault data response code: " + responseCode);
+            System.out.println("Get wallet data response code: " + responseCode);
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpGet.getInputStream()));
                 String inputLine;
@@ -394,7 +395,7 @@ public class ComposerConnection {
                 bufferedReader.close();
                 httpGet.disconnect();
                 String response = stringBuilder.toString();
-                System.out.println("Get vault data response: " + response);
+                System.out.println("Get wallet data response: " + response);
                 return response;
             }
             httpGet.disconnect();
@@ -437,11 +438,11 @@ public class ComposerConnection {
         return null;
     }
 
-    public int depositCoin(String vaultID, double amount) {
-        String vault = vaultClass + "#" + vaultID;
+    public int depositCoin(String walletID, double amount) {
+        String wallet = walletClass + "#" + walletID;
         JSONObject depositCoin = new JSONObject();
         depositCoin.put("$class", depositCoinClass);
-        depositCoin.put("vault", vault);
+        depositCoin.put("wallet", wallet);
         depositCoin.put("amount", amount);
 
         String body = depositCoin.toJSONString();
@@ -470,11 +471,11 @@ public class ComposerConnection {
         return -1;
     }
 
-    public int withdrawCoin(String vaultID, double amount) {
-        String vault = vaultClass + "#" + vaultID;
+    public int withdrawCoin(String walletID, double amount) {
+        String wallet = walletClass + "#" + walletID;
         JSONObject depositCoin = new JSONObject();
         depositCoin.put("$class", withdrawCoinClass);
-        depositCoin.put("vault", vault);
+        depositCoin.put("wallet", wallet);
         depositCoin.put("amount", amount);
 
         String body = depositCoin.toJSONString();
