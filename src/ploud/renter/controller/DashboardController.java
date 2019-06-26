@@ -375,12 +375,29 @@ public class DashboardController implements Initializable {
                             bodyContainer.setDisable(false);
                             AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Upload", renterFile.getName() + "(" + renterFile.getRenderSize()+ ") successfully stored in network.");
                             if (transferCoinFailedHostList.isEmpty()) {
-                                //Substract wallet balance
-                                BigDecimal currentBalance = renter.getWallet().getBalance();
-                                BigDecimal newBalance = currentBalance.subtract(BigDecimal.valueOf(hostReward).multiply(hostCount));
-                                renter.getWallet().setBalance(newBalance);
+                                //Notify host peer to reload wallet data and update UI
+                                for (Rentor host : hostList) {
+                                    try {
+                                        String hostAddress = host.getIpAddress();
+                                        renterSocket = new RenterSocket(hostAddress, port);
+                                        renterSocket.start();
+
+                                        Future<String> socketListenerResult = renterSocket.sendMessage("doneFileUpload");
+                                        String socketResponse = socketListenerResult.get();
+                                        if (socketResponse.equals("OK")) {
+                                            BigDecimal currentBalance = renter.getWallet().getBalance();
+                                            BigDecimal newBalance = currentBalance.subtract(BigDecimal.valueOf(hostReward));
+                                            renter.getWallet().setBalance(newBalance);
+                                        }
+                                    } catch (ExecutionException ex) {
+                                        ex.printStackTrace();
+                                    } catch (InterruptedException ex) {
+                                        ex.printStackTrace();
+                                    }
+                                }
                                 accountBalanceText.setText("Balance: " + balanceFormat.format(renter.getWallet().getBalance()));
                             }
+                            //Need improvisation
                             if (!transferCoinFailedHostList.isEmpty()) {
                                 uploadButton.setDisable(true);
                                 AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "Transfer Coin Failed", "Failed to transfer coin to one or more rentor peers. Please do not log out or close the application window.");

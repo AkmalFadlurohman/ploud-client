@@ -13,5 +13,6 @@ public interface RentorTask {
     public abstract void completeFileReceive();
     public abstract void prepareRequestedFile(String renterFileData);
     public abstract boolean sendRequestedFile(DataOutputStream streamOut);
+    public abstract void reloadWallet();
     public abstract void deleteFile(File renterFile);
 }

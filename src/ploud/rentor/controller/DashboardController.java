@@ -196,6 +196,13 @@ public class DashboardController implements Initializable {
             public void deleteFile(File renterFile) {
 
             }
+
+            @Override
+            public synchronized void reloadWallet() {
+                String walletData = composerConnection.getWalletData(rentor.getEmail());
+                rentor.setWallet(new Wallet(walletData));
+                accountBalanceText.setText("Balance: " + balanceFormat.format(rentor.getWallet().getBalance()));
+            }
         };
         rentorSocketServer.start();
     }
