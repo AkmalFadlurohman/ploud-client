@@ -26,6 +26,7 @@ public class ComposerConnection {
     private String rentorAuthAddress = composerAuthAPI + "/Rentor";
     private String walletAddress = composerAPI + "/Wallet";
     private String registerSpaceAddress = composerAuthAPI + "/RegisterSpace";
+    private String releaseSpaceAddress = composerAuthAPI + "ReleaseSpace";
     private String depositCoinAddress = composerAuthAPI + "/DepositCoin";
     private String withdrawCoinAddress = composerAuthAPI + "/WithdrawCoin";
 
@@ -438,6 +439,41 @@ public class ComposerConnection {
         return null;
     }
 
+    public String getReleaseSpaceRecords(String lastOnline) {
+        try {
+            String filter = "{'where':{'timestamp':{'gte':'" + lastOnline + "'}}}";
+            String param = "?filter=" + URLEncoder.encode(filter, "UTF-8");
+            String address = releaseSpaceAddress + param;
+            System.out.println("Get ReleaseSpace address: " + address);
+            URL urlAddress = new URL(address);
+            HttpURLConnection httpGet = (HttpURLConnection) urlAddress.openConnection();
+
+            httpGet.setRequestMethod("GET");
+            httpGet.setRequestProperty("X-Access-Token", accessToken);
+            httpGet.setDoInput(true);
+
+            int responseCode = httpGet.getResponseCode();
+            System.out.println("Get ReleaseSpace data response code: " + responseCode);
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpGet.getInputStream()));
+                String inputLine;
+                StringBuilder stringBuilder = new StringBuilder();
+                while ((inputLine = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(inputLine);
+                }
+                bufferedReader.close();
+                httpGet.disconnect();
+                String response = stringBuilder.toString();
+                System.out.println("Get ReleaseSpace data response: " + response);
+                return response;
+            }
+            httpGet.disconnect();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     public int depositCoin(String walletID, double amount) {
         String wallet = walletClass + "#" + walletID;
         JSONObject depositCoin = new JSONObject();
@@ -508,10 +544,6 @@ public class ComposerConnection {
         String email = rentor.getEmail();
         String param = "/" + email;
         String address = rentorAddress + param;
-//        String rentorData = getRentorData(email);
-//        if (rentorData == null) {
-//            return -1;
-//        }
         try {
 //            String lastOnline = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date());
 //            JSONObject rentor = (JSONObject) new JSONParser().parse(rentorData);

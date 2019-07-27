@@ -23,6 +23,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import ploud.renter.model.Wallet;
+import ploud.renter.util.BlowfishEncryptor;
 import ploud.rentor.model.Rentor;
 import ploud.renter.util.WalletTransaction;
 import ploud.util.AlertHelper;
@@ -35,6 +36,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -289,8 +291,9 @@ public class DashboardController implements Initializable {
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", selectedFile.getName() + " is not a file.");
                 return;
             }
-            if (selectedFile.length() > (100*1024*1024)) {
-                AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", "File size limit. " + selectedFile.getName() + " is over 100 MB.");
+            long fileSizeLimit = (long) 2*1024*1024*1024;
+            if (selectedFile.length() > fileSizeLimit) {
+                AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Upload Error", "File size limit. " + selectedFile.getName() + " is over 2 GB.");
                 return;
             }
             if (isFileDuplicated(selectedFile)) {
@@ -317,7 +320,7 @@ public class DashboardController implements Initializable {
                 return;
             }
             System.out.println("Candidate host list count: " + candidateHostList.size());
-
+//
             RenterFile renterFile = new RenterFile();
             renterFile.setName(selectedFile.getName());
             renterFile.setHash(selectedFile);
@@ -328,9 +331,20 @@ public class DashboardController implements Initializable {
             renterFile.setUploadDate(simpleDateFormat.format(new Date()));
             renterFile.setHostList(candidateHostList);
 
+            //Encrypt
+            if (renter.getCertificate() == null) {
+                CompletableFuture<String> getCertificateTask = getCertificate();
+                String certificate = getCertificateTask.get();
+                renter.setCertificate(certificate);
+            }
+            BlowfishEncryptor encryptor = new BlowfishEncryptor(renter.getCertificate());
+            File encryptedFile = new File(renterFile.getHash());
+            System.out.println("Encrypting selected file...");
+            encryptor.encrypt(selectedFile, encryptedFile);
+
             System.out.println("File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " will be uploaded to network.");
 
-            CompletableFuture<ArrayList<Rentor>> fileUploadTask = uploadFile(renterFile, selectedFile, candidateHostList);
+            CompletableFuture<ArrayList<Rentor>> fileUploadTask = uploadFile(renterFile, encryptedFile, candidateHostList);
             ArrayList<Rentor> hostList = fileUploadTask.get();
             if (hostList == null || hostList.isEmpty()) {
                 progressIndicator.setVisible(false);
@@ -341,6 +355,8 @@ public class DashboardController implements Initializable {
             System.out.println("Host list count: " + hostList.size());
             CompletableFuture<Integer> submitRentSpaceTask = submitRentSpace(renterFile, hostList);
             int submitRentSpaceResponse = submitRentSpaceTask.get();
+
+            //Delete the file that has already been uploaded (Rollback)
             if (submitRentSpaceResponse != HttpURLConnection.HTTP_OK) {
                 for (Rentor host : hostList) {
                     String hostAddress = host.getIpAddress();
@@ -369,6 +385,8 @@ public class DashboardController implements Initializable {
                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Transaction Error", "Failed to submit RentSpace transaction to the network. Rolling back uploaded file in rentor peers...");
                 return;
             }
+
+            boolean encryptedFileDeleted = encryptedFile.delete();
 
             BigDecimal hostReward = BigDecimal.valueOf(fileSize).multiply(BigDecimal.valueOf(2)).divide(BigDecimal.valueOf(100000000));
             System.out.println("Reward/host peer: " + balanceFormat.format(hostReward));
@@ -498,25 +516,30 @@ public class DashboardController implements Initializable {
 
                 for (Rentor candidateHost : candidateHostList) {
                     String candidateHostAddress = candidateHost.getIpAddress();
-                    renterSocket = new RenterSocket(candidateHostAddress, port);
-                    renterSocket.start();
-
                     try {
-                        Future<String> socketListenerResult = renterSocket.sendMessage("fileUpload");
-                        String socketResponse = socketListenerResult.get();
-                        if (socketResponse.equals("OK")) {
-                            //socketListenerResult = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + renterFile.toJSON(renter.getEmail()));
-                            socketListenerResult = renterSocket.sendMessage(renterFile.toJSON(renter.getEmail()));
-                            socketResponse = socketListenerResult.get();
-                            if (socketResponse.equals("prepareFileUpload")) {
-                                System.out.println("Uploading File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " to " + candidateHostAddress);
-                                CompletableFuture<String> socketFileUploadTask = renterSocket.sendFile(selectedFile);
-                                socketFileUploadTaskMap.put(candidateHost.getEmail(), socketFileUploadTask);
+                        renterSocket = new RenterSocket(candidateHostAddress, port);
+                        renterSocket.start();
+                        try {
+                            Future<String> socketListenerResult = renterSocket.sendMessage("fileUpload");
+                            String socketResponse = socketListenerResult.get();
+                            if (socketResponse.equals("OK")) {
+                                //socketListenerResult = renterSocket.sendMessage("owner=" + renter.getEmail() + "&file=" + renterFile.toJSON(renter.getEmail()));
+                                socketListenerResult = renterSocket.sendMessage(renterFile.toJSON(renter.getEmail()));
+                                socketResponse = socketListenerResult.get();
+                                if (socketResponse.equals("prepareFileUpload")) {
+                                    System.out.println("Uploading File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " to " + candidateHostAddress);
+                                    CompletableFuture<String> socketFileUploadTask = renterSocket.sendFile(selectedFile);
+                                    socketFileUploadTaskMap.put(candidateHost.getEmail(), socketFileUploadTask);
+                                }
                             }
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        } catch (ExecutionException ex) {
+                            ex.printStackTrace();
                         }
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
-                    } catch (ExecutionException ex) {
+                    } catch (UnknownHostException ex) {
+                        continue;
+                    } catch (IOException ex) {
                         ex.printStackTrace();
                     }
                 }
@@ -584,6 +607,10 @@ public class DashboardController implements Initializable {
                                 BigDecimal newBalance = currentBalance.subtract(hostReward);
                                 renter.getWallet().setBalance(newBalance);
                             }
+                        } catch (UnknownHostException ex) {
+                            continue;
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
                         } catch (ExecutionException ex) {
                             ex.printStackTrace();
                         } catch (InterruptedException ex) {
@@ -639,44 +666,65 @@ public class DashboardController implements Initializable {
             AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Download Error", "There is not enough space left in you local storage.");
             return;
         }
+        bodyContainer.setDisable(true);
+        progressIndicator.setVisible(true);
 
-        System.out.println("File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " will be downloaded to local.");
-        CompletableFuture<File> dashboardFileDownloadTask = downloadFile(selectedFile);
-        dashboardFileDownloadTask.thenAccept(new Consumer<File>() {
-            @Override
-            public void accept(File receivedFile) {
-                if (receivedFile != null) {
-                    Platform.runLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            FileChooser fileChooser = new FileChooser();
-                            fileChooser.setTitle("Save Downloaded File");
-                            fileChooser.setInitialFileName(selectedFile.getName());
-                            File savedFile = fileChooser.showSaveDialog(primaryStage);
+        try {
+            if (renter.getCertificate() == null) {
+                CompletableFuture<String> getCertificateTask = getCertificate();
+                String certificate = getCertificateTask.get();
+                renter.setCertificate(certificate);
+            }
+            BlowfishEncryptor encryptor = new BlowfishEncryptor(renter.getCertificate());
 
-                            if (savedFile != null && receivedFile != null) {
-                                try {
-                                    Files.copy(receivedFile.toPath(), savedFile.toPath());
-                                    AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Download", selectedFile.getName() + "(" + selectedFile.getRenderSize()+ ") successfully downloaded to local storage.");
-                                } catch (IOException ex) {
-                                    ex.printStackTrace();
+            System.out.println("File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " will be downloaded to local.");
+            CompletableFuture<File> dashboardFileDownloadTask = downloadFile(selectedFile);
+            dashboardFileDownloadTask.thenAccept(new Consumer<File>() {
+                @Override
+                public void accept(File receivedFile) {
+                    if (receivedFile != null) {
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                File decryptedFile = new File(selectedFile.getHash());
+                                System.out.println("Decrypting downloaded file...");
+                                encryptor.decrypt(receivedFile, decryptedFile);
+
+                                progressIndicator.setVisible(false);
+                                bodyContainer.setDisable(false);
+
+
+                                FileChooser fileChooser = new FileChooser();
+                                fileChooser.setTitle("Save Downloaded File");
+                                fileChooser.setInitialFileName(selectedFile.getName());
+                                File savedFile = fileChooser.showSaveDialog(primaryStage);
+
+                                if (savedFile != null) {
+                                    try {
+                                        Files.copy(decryptedFile.toPath(), savedFile.toPath());
+                                        AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Download", selectedFile.getName() + "(" + selectedFile.getRenderSize()+ ") successfully downloaded to local storage.");
+                                    } catch (IOException ex) {
+                                        ex.printStackTrace();
+                                    }
                                 }
-                            } else {
+
+                                boolean decryptedFileDeleted = decryptedFile.delete();
+                            }
+                        });
+                    } else {
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
                                 AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Download Error", selectedFile.getName() + " can not be downloaded at the moment. Please try again later.");
                             }
-                        }
-                    });
-                } else {
-                    Platform.runLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "Download Error", selectedFile.getName() + " can not be downloaded at the moment. Please try again later.");
-                        }
-                    });
+                        });
+                    }
+                    renterSocket.close();
                 }
-                renterSocket.close();
-            }
-        });
+            });
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
 
@@ -692,30 +740,35 @@ public class DashboardController implements Initializable {
                     //Check if host lastOnline time is in 5 minutes range
                     if (host.getLastOnline().toInstant().plusSeconds((long) 3*60).isAfter(currentTime.toInstant())) {
                         String hostAddress = host.getIpAddress();
-                        int port = 8089;
-                        renterSocket = new RenterSocket(hostAddress, port);
-                        renterSocket.start();
-
                         try {
-                            Future<String> socketListenerTask = renterSocket.sendMessage("fileDownload");
-                            String socketResponse = socketListenerTask.get();
-                            if (socketResponse.equals("OK")) {
-                                socketListenerTask = renterSocket.sendMessage(selectedFile.toJSON(renter.getEmail()));
-                                socketResponse = socketListenerTask.get();
-                                if (socketResponse.equals("prepareFileReceive")) {
-                                    System.out.println("Downloading File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " from " + hostAddress);
-                                    //Create file receive task on socket
-                                    CompletableFuture<File> socketFileDownloadTask  = renterSocket.receiveFile(selectedFile);
-                                    File receivedFile = socketFileDownloadTask.get();
-                                    if (receivedFile != null) {
-                                        System.out.println("File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " successfully downloaded");
-                                        return receivedFile;
+                            renterSocket = new RenterSocket(hostAddress, port);
+                            renterSocket.start();
+
+                            try {
+                                Future<String> socketListenerTask = renterSocket.sendMessage("fileDownload");
+                                String socketResponse = socketListenerTask.get();
+                                if (socketResponse.equals("OK")) {
+                                    socketListenerTask = renterSocket.sendMessage(selectedFile.toJSON(renter.getEmail()));
+                                    socketResponse = socketListenerTask.get();
+                                    if (socketResponse.equals("prepareFileReceive")) {
+                                        System.out.println("Downloading File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " from " + hostAddress);
+                                        //Create file receive task on socket
+                                        CompletableFuture<File> socketFileDownloadTask  = renterSocket.receiveFile(selectedFile);
+                                        File receivedFile = socketFileDownloadTask.get();
+                                        if (receivedFile != null) {
+                                            System.out.println("File: " + selectedFile.getName() + " Hash: " + selectedFile.getHash() + " successfully downloaded");
+                                            return receivedFile;
+                                        }
                                     }
                                 }
+                            } catch (InterruptedException ex) {
+                                ex.printStackTrace();
+                            } catch (ExecutionException ex) {
+                                ex.printStackTrace();
                             }
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
-                        } catch (ExecutionException ex) {
+                        } catch (UnknownHostException ex) {
+                            continue;
+                        } catch (IOException ex) {
                             ex.printStackTrace();
                         }
                     }
@@ -727,10 +780,206 @@ public class DashboardController implements Initializable {
         return dashboardFileDownloadTask;
     }
 
-    //TO DO
-    private int deleteFile(RenterFile renterFile) {
-        System.out.println("File: " + renterFile.getName() + " Hash: " + renterFile.getHash() + " deleted from the network");
-        return 1;
+    private CompletableFuture<String> getCertificate() {
+        CompletableFuture<String> getCertificateTask = CompletableFuture.supplyAsync(new Supplier<String>() {
+            @Override
+            public String get() {
+                String identityData = composerConnection.getSystemIdentity();
+                if (identityData == null) {
+                    return null;
+                }
+                try {
+                    JSONArray identityList = (JSONArray) new JSONParser().parse(identityData);
+                    Iterator iterator = identityList.iterator();
+                    JSONObject identity = (JSONObject) iterator.next();
+                    String certificate = (String) identity.get("certificate");
+                    int beginIdx = certificate.indexOf("-----BEGIN CERTIFICATE-----");
+                    int endIdx = certificate.indexOf("-----END CERTIFICATE-----");
+                    return certificate.substring(beginIdx, endIdx).substring(0,55);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+                return null;
+            }
+        });
+        return getCertificateTask;
+    }
+
+    private void doDelete(RenterFile selectedFile, Stage primaryStage) {
+        bodyContainer.setDisable(true);
+        progressIndicator.setVisible(true);
+        try {
+            CompletableFuture<Integer> submitReleaseSpaceTask = submitReleaseSpace(selectedFile);
+            int submitReleaseSpaceResponse = submitReleaseSpaceTask.get();
+            if (submitReleaseSpaceResponse == HttpURLConnection.HTTP_OK) {
+                CompletableFuture<Integer> deleteFileTask = deleteFile(selectedFile);
+                int deleteCount = deleteFileTask.get();
+                if (deleteCount == 0) {
+                    System.err.println("Error: No host is online to process ReleaseSpace.");
+                }
+                CompletableFuture<Integer> doneFileDeleteTask = doneFileDelete(selectedFile);
+                doneFileDeleteTask.thenAccept(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer doneDeleteCount) {
+                        if (doneDeleteCount == deleteCount) {
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    removeFile(selectedFile);
+
+                                    long newSpaceUsage = renter.getSpaceUsage()-selectedFile.getSize();
+                                    renter.setSpaceUsage(newSpaceUsage);
+
+                                    String renderSpaceUsage = renter.getRenderSpaceUsage();
+                                    String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
+                                    spaceUsageLabel.setText(spaceUsageText + " " +  renderSpaceUsage);
+
+                                    progressIndicator.setVisible(false);
+                                    bodyContainer.setDisable(false);
+                                    AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Delete Success", selectedFile.getName() + " successfully deleted from the networks.");
+                                }
+                            });
+                        }
+                    }
+                });
+            } else {
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressIndicator.setVisible(false);
+                        bodyContainer.setDisable(false);
+                        AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "File Delete Error", selectedFile.getName() + " can not be deleted at the moment. Please try again later.");
+                    }
+                });
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+    }
+
+    private CompletableFuture<Integer> deleteFile(RenterFile selectedFile) {
+        CompletableFuture<Integer> deleteFileTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
+            @Override
+            public Integer get() {
+                Date currentTime = new Date();
+                int deleteCount = 0;
+                for (String hostEmail : selectedFile.getHostList()) {
+                    String rentorData = composerConnection.getRentorData(hostEmail);
+                    Rentor host = new Rentor(rentorData);
+
+                    //Check if host lastOnline time is in 5 minutes range
+                    if (host.getLastOnline().toInstant().plusSeconds((long) 3*60).isAfter(currentTime.toInstant())) {
+                        String hostAddress = host.getIpAddress();
+                        try {
+                            renterSocket = new RenterSocket(hostAddress, port);
+                            renterSocket.start();
+                            try {
+                                Future<String> socketListenerTask = renterSocket.sendMessage("fileDelete");
+                                String socketResponse = socketListenerTask.get();
+                                if (socketResponse.equals("OK")) {
+                                    socketListenerTask = renterSocket.sendMessage(selectedFile.toJSON(renter.getEmail()));
+                                    socketResponse = socketListenerTask.get();
+                                    if (socketResponse.equals("Success")) {
+                                        deleteCount++;
+                                        System.out.println("File: " + selectedFile.getName() + " successfully deleted from host:  " + host.getEmail());
+                                    }
+                                }
+                            } catch (InterruptedException ex) {
+                                ex.printStackTrace();
+                            } catch (ExecutionException ex) {
+                                ex.printStackTrace();
+                            }
+                        } catch (UnknownHostException ex) {
+                            continue;
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                }
+                return deleteCount;
+            }
+        });
+        return deleteFileTask;
+    }
+
+    private CompletableFuture<Integer> submitReleaseSpace(RenterFile deletedFile) {
+        CompletableFuture<Integer> submitReleaseSpaceTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
+            @Override
+            public Integer get() {
+                String email = renter.getEmail();
+                int releaseSpaceResponse = composerConnection.releaseSpace(email, deletedFile);
+                return releaseSpaceResponse;
+            }
+        });
+        return submitReleaseSpaceTask;
+    }
+
+    private Callable<Integer> failedReleaseSpace(RenterFile deletedFile) {
+        Callable<Integer> releaseSpaceCallable = new Callable<Integer>() {
+            @Override
+            public Integer call() throws Exception {
+                System.out.println("Submitting ReleaseSpace transaction on failed submission...");
+
+                String email = renter.getEmail();
+                int releaseSpaceResponse = composerConnection.releaseSpace(email, deletedFile);
+                return releaseSpaceResponse;
+            }
+        };
+        return releaseSpaceCallable;
+    }
+
+    private void removeFile(RenterFile deletedFile) {
+        for (int i=0;i<renter.getRenterFiles().size();i++) {
+            RenterFile renterFile = renter.getRenterFiles().get(i);
+            if (renterFile.getHash().equals(deletedFile.getHash()) && renterFile.getName().equals(deletedFile.getName())) {
+                renter.getRenterFiles().remove(i);
+                break;
+            }
+        }
+        for (int j=0;j<renterFileTable.getItems().size();j++) {
+            RenterFile renterFile = (RenterFile) renterFileTable.getItems().get(j);
+            if (renterFile.getHash().equals(deletedFile.getHash()) && renterFile.getName().equals(deletedFile.getName())) {
+                renterFileTable.getItems().remove(j);
+                break;
+            }
+        }
+    }
+
+    private CompletableFuture<Integer> doneFileDelete(RenterFile deletedFile) {
+        CompletableFuture<Integer> doneDeleteFileTask = CompletableFuture.supplyAsync(new Supplier<Integer>() {
+            @Override
+            public Integer get() {
+                int doneDeleteCount = 0;
+                for (String hostEmail : deletedFile.getHostList()) {
+                    String rentorData = composerConnection.getRentorData(hostEmail);
+                    Rentor host = new Rentor(rentorData);
+
+                    String hostAddress = host.getIpAddress();
+                    try {
+                        renterSocket = new RenterSocket(hostAddress, port);
+                        renterSocket.start();
+                        try {
+                            Future<String> socketListenerTask = renterSocket.sendMessage("doneFileDelete");
+                            String socketResponse = socketListenerTask.get();
+                            if (socketResponse.equals("OK")) {
+                                doneDeleteCount++;
+                            }
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        } catch (ExecutionException ex) {
+                            ex.printStackTrace();
+                        }
+                    } catch (UnknownHostException ex) {
+                        continue;
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                return doneDeleteCount;
+            }
+        });
+        return doneDeleteFileTask;
     }
 
     private boolean isFileDuplicated(File file) throws Exception{
@@ -863,7 +1112,6 @@ public class DashboardController implements Initializable {
                                 @Override
                                 public void handle(ActionEvent event) {
                                     Stage primaryStage = (Stage) ((Button) event.getSource()).getScene().getWindow();
-                                    //AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Download", selectedFile.getName() + "(" + selectedFile.getRenderSize()+ ") will be downloaded to local storage");
                                     doDownload(selectedFile, primaryStage);
                                 }
                             });
@@ -880,17 +1128,18 @@ public class DashboardController implements Initializable {
                                     //AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Delete", selectedFile.getName() + "(" + selectedFile.getRenderSize()+ ") will be deleted from the network");
                                     ButtonType confirmationResponse = AlertHelper.showConfirmation(primaryStage, "File Delete", selectedFile.getName() + "(" + selectedFile.getRenderSize()+ ") will be deleted from the network. Are you sure?");
                                     if (confirmationResponse == ButtonType.OK) {
-                                        int deleteResponse = deleteFile(selectedFile);
-                                        if (deleteResponse == 1) {
-                                            long newSpaceUsage = renter.getSpaceUsage()-selectedFile.getSize();
-                                            renter.setSpaceUsage(newSpaceUsage);
-
-                                            String renderSpaceUsage = renter.getRenderSpaceUsage();
-                                            String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
-                                            spaceUsageLabel.setText(spaceUsageText + renderSpaceUsage);
-
-                                            renterFileTable.getItems().remove(getIndex());
-                                        }
+                                        doDelete(selectedFile, primaryStage);
+//                                        int deleteResponse = deleteFile(selectedFile);
+//                                        if (deleteResponse == 1) {
+//                                            long newSpaceUsage = renter.getSpaceUsage()-selectedFile.getSize();
+//                                            renter.setSpaceUsage(newSpaceUsage);
+//
+//                                            String renderSpaceUsage = renter.getRenderSpaceUsage();
+//                                            String spaceUsageText = spaceUsageLabel.getText().substring(0, spaceUsageLabel.getText().indexOf(":")+1);
+//                                            spaceUsageLabel.setText(spaceUsageText + renderSpaceUsage);
+//
+//                                            renterFileTable.getItems().remove(getIndex());
+//                                        }
                                     }
                                 }
                             });

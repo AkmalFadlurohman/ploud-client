@@ -156,7 +156,7 @@ public class Rentor {
         this.rentorFiles = rentorFiles;
     }
 
-    public ArrayList getRentorFiles() {
+    public ArrayList<RentorFile> getRentorFiles() {
         return rentorFiles;
     }
 

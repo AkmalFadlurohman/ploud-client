@@ -28,8 +28,9 @@ public class ComposerConnection {
     private String walletAddress = composerAPI + "/Wallet";
     private String depositCoinAddress = composerAuthAPI + "/DepositCoin";
     private String withdrawCoinAddress = composerAuthAPI + "/WithdrawCoin";
-    private String rentSpaceAddress = composerAuthAPI + "/RentSpace";
     private String transferCoinAddress = composerAuthAPI + "/TransferCoin";
+    private String rentSpaceAddress = composerAuthAPI + "/RentSpace";
+    private String releaseSpaceAddress = composerAuthAPI + "/ReleaseSpace";
 
     private String networkName = "@ploud-network";
     private String nameSpace = "org.ploud.network";
@@ -40,6 +41,7 @@ public class ComposerConnection {
     private String withdrawCoinClass = nameSpace + ".WithdrawCoin";
     private String transferCoinClass = nameSpace + ".TransferCoin";
     private String rentSpaceClass = nameSpace + ".RentSpace";
+    private String releaseSpaceClass = nameSpace + ".ReleaseSpace";
 
     public ComposerConnection(String accessToken) {
         this.accessToken = accessToken;
@@ -362,6 +364,37 @@ public class ComposerConnection {
         return null;
     }
 
+    public String getSystemIdentity() {
+        try {
+            URL urlAddress = new URL(identitySystemAddress);
+            HttpURLConnection httpGet = (HttpURLConnection) urlAddress.openConnection();
+
+            httpGet.setRequestMethod("GET");
+            httpGet.setRequestProperty("X-Access-Token", accessToken);
+            httpGet.setDoInput(true);
+
+            int responseCode = httpGet.getResponseCode();
+            System.out.println("Get identity data response code: " + responseCode);
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpGet.getInputStream()));
+                String inputLine;
+                StringBuilder stringBuilder = new StringBuilder();
+                while ((inputLine = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(inputLine);
+                }
+                bufferedReader.close();
+                httpGet.disconnect();
+                String response = stringBuilder.toString();
+                System.out.println("Get identity data response: " + response);
+                return response;
+            }
+            httpGet.disconnect();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
     public String getRentorWalletData(String email) {
         try {
             String owner = "resource:" + rentorClass + "#" + email;
@@ -598,6 +631,40 @@ public class ComposerConnection {
 
             int responseCode = httpPost.getResponseCode();
             System.out.println("RentSpace transaction response code: " + responseCode);
+            return responseCode;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return -1;
+    }
+
+    public int releaseSpace(String email, RenterFile deletedFile) {
+        String renter = "resource:" + renterClass + "#" + email;
+        JSONObject releaseSpace = new JSONObject();
+        releaseSpace.put("$class", releaseSpaceClass);
+        releaseSpace.put("renter", renter);
+        releaseSpace.put("documentSize", deletedFile.getSize());
+        releaseSpace.put("documentName", deletedFile.getName());
+        releaseSpace.put("documentHash", deletedFile.getHash());
+
+        String body = releaseSpace.toJSONString();
+        System.out.println("Sending ReleaseSpace transaction request: " + body);
+
+        try {
+            URL urlAddress = new URL(releaseSpaceAddress);
+            HttpURLConnection httpPost = (HttpURLConnection) urlAddress.openConnection();
+
+            httpPost.setRequestMethod("POST");
+            httpPost.setRequestProperty("Content-Type", "application/json");
+            httpPost.setRequestProperty("X-Access-Token", accessToken);
+            httpPost.setDoOutput(true);
+
+            DataOutputStream streamOut = new DataOutputStream(httpPost.getOutputStream());
+            streamOut.writeBytes(body);
+            streamOut.flush();
+
+            int responseCode = httpPost.getResponseCode();
+            System.out.println("ReleaseSpace transaction response code: " + responseCode);
             return responseCode;
         } catch (Exception ex) {
             ex.printStackTrace();

@@ -134,7 +134,7 @@ public class WalletTransaction {
                 transactionID.setText("ID: " + transaction.getID());
                 transactionTimestamp.setText("Timestamp: " + transaction.getTimeStamp());
                 participantInvoking.setText("Participant Invoking: " + transaction.getParticipantInvoking());
-                if (transaction.getType().equals("RentSpace")) {
+                if (transaction.getType().equals("RentSpace") || transaction.getType().equals("ReleaseSpace")) {
                     commodity.setText("Space Size: " + transaction.getCommodityAmount());
                 } else {
                     commodity.setText("Amount: " + transaction.getCommodityAmount());

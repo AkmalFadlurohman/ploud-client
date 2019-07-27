@@ -158,7 +158,6 @@ public class RentorFile {
     }
 
     public  void setPeerList(ArrayList<String> peerList) {
-        System.out.println("Setting peer list for rentor file model");
         this.peerList.addAll(peerList);
     }
 

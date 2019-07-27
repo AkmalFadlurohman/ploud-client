@@ -18,14 +18,10 @@ public class RenterSocket {
     private ExecutorService executorService = Executors.newCachedThreadPool();
 
 
-    public RenterSocket(String serverAddress, int serverPort) {
+    public RenterSocket(String serverAddress, int serverPort) throws UnknownHostException, IOException {
         System.out.println("Establishing connection to rentor peer");
-        try {
-            socket = new Socket(serverAddress, serverPort);
-            System.out.println("Connected to rentor peer: " + socket);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        socket = new Socket(serverAddress, serverPort);
+        System.out.println("Connected to rentor peer: " + socket);
     }
 
     public void start() {

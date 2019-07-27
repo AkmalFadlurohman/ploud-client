@@ -23,7 +23,7 @@ public class Transaction {
             this.timeStamp = timeStamp;
             this.participantInvoking = participantInvoking;
 
-            if (type.equals("RentSpace")) {
+            if (type.equals("RentSpace") || type.equals("ReleaseSpace")) {
                 long spaceSize = (long) transaction.get("spaceSize");
                 if (spaceSize < 1000) {
                     this.commodityAmount =  getSizeBytes(spaceSize);

@@ -13,6 +13,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import ploud.renter.model.RenterFile;
 import ploud.rentor.model.Wallet;
 import ploud.rentor.util.ComposerConnection;
@@ -27,11 +30,10 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -131,10 +133,9 @@ public class DashboardController implements Initializable {
                     System.out.println("Completed new file hosting request received from: " + receivedFile.getOwner());
 
                     long receivedFileSize = receivedFile.getSize();
-                    updateBlockerFileSize(receivedFileSize);
-
                     long newFreeSpace = rentor.getFreeSpace()-receivedFileSize;
                     rentor.setFreeSpace(newFreeSpace);
+                    updateBlockerFileSize();
 
                     rentor.getRentorFiles().add(receivedFile);
                     rentorFileTable.getItems().add(receivedFile);
@@ -205,8 +206,8 @@ public class DashboardController implements Initializable {
                 }
                 boolean fileDeleted = fileToDelete.delete();
                 if (fileDeleted) {
-                    rentor.getRentorFiles().remove(rentorFile);
-                    rentorFileTable.getItems().remove(rentorFile);
+                    serverPollingTask.stop();
+                    removeFile(rentorFile);
                 }
                 return fileDeleted;
             }
@@ -234,6 +235,36 @@ public class DashboardController implements Initializable {
                                     accountBalanceText.setText("Balance: " + balanceFormat.format(rentor.getWallet().getBalance()));
                                     progressIndicator.setVisible(false);
                                     bodyContainer.setDisable(false);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void reloadRentorData() {
+                bodyContainer.setDisable(true);
+                progressIndicator.setVisible(true);
+                CompletableFuture.supplyAsync(new Supplier<String>() {
+                    @Override
+                    public String get() {
+                        String rentorData = composerConnection.getRentorData(rentor.getEmail());
+                        return rentorData;
+                    }
+                }).thenAccept(new Consumer<String>() {
+                    @Override
+                    public void accept(String rentorData) {
+                        if (rentorData != null) {
+                            System.out.println("Reloading rentor data...");
+                            rentor = new Rentor(rentorData);
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    setSpaceOccupancy();
+                                    progressIndicator.setVisible(false);
+                                    bodyContainer.setDisable(false);
+                                    serverPollingTask.play();
                                 }
                             });
                         }
@@ -271,6 +302,8 @@ public class DashboardController implements Initializable {
                 Platform.runLater(new Runnable() {
                     @Override
                     public void run() {
+                        updateBlockerFileSize();
+
                         setProfileMenu();
                         walletIDText.setText(walletIDText.getText().substring(0, walletIDText.getText().indexOf(":")+1) + " " + rentor.getWallet().getID());
                         accountBalanceText.setText("Balance: " + balanceFormat.format(rentor.getWallet().getBalance()));
@@ -299,6 +332,44 @@ public class DashboardController implements Initializable {
         }));
         serverPollingTask.setCycleCount(Timeline.INDEFINITE);
         serverPollingTask.play();
+
+        Runnable releaseSpaceSyncTask = new Runnable() {
+            @Override
+            public void run() {
+                DateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                String releaseSpaceData = composerConnection.getReleaseSpaceRecords(simpleDateFormat.format(rentor.getLastOnline()));
+                if (releaseSpaceData != null && !releaseSpaceData.equals("[]")) {
+                    try {
+                        JSONArray releaseSpaceRecords = (JSONArray) new JSONParser().parse(releaseSpaceData);
+                        Iterator iterator = releaseSpaceRecords.iterator();
+                        while (iterator.hasNext()) {
+                            JSONObject releaseSpace = (JSONObject) iterator.next();
+                            System.out.println("ReleaseSpace transaction: " + releaseSpace.toJSONString());
+                            String owner = ((String) releaseSpace.get("renter")).split("#")[1];
+                            String hash = (String) releaseSpace.get("documentHash");
+                            long size = (long) releaseSpace.get("documentSize");
+                            String releasedFilePath = ploudHomePath + File.separator + owner + File.separator + hash;
+                            System.out.println("File to be released path: " + releasedFilePath);
+                            File releasedFile = new File(releasedFilePath);
+                            if (releasedFile.exists() && releasedFile.isFile() && releasedFile.length() == size) {
+                                boolean releasedFileDeleted = releasedFile.delete();
+                                System.out.println("Released file path: " + releasedFilePath);
+                                if (releasedFileDeleted) {
+                                    System.out.println("Deleted File: " + releasedFile.getName() + " Owner: " + owner + " on ReleaseSpace");
+                                } else {
+                                    System.out.println("Failed to delete File: " + releasedFile.getName() + " Owner: " + owner + " on ReleaseSpace");
+                                }
+                            }
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                } else {
+                    System.out.println("No new ReleaseSpace data.");
+                }
+            }
+        };
+        new Thread(releaseSpaceSyncTask).start();
     }
 
     @FXML
@@ -515,6 +586,23 @@ public class DashboardController implements Initializable {
         spaceOccupancyBar.setProgress(spaceOccupancyRatio);
     }
 
+    private void removeFile(RentorFile deletedFile) {
+        for (int i=0;i<rentor.getRentorFiles().size();i++) {
+            RentorFile rentorFile = rentor.getRentorFiles().get(i);
+            if (rentorFile.getHash().equals(deletedFile.getHash()) && rentorFile.getOwner().equals(deletedFile.getOwner())) {
+                rentor.getRentorFiles().remove(i);
+                break;
+            }
+        }
+        for (int j=0;j<rentorFileTable.getItems().size();j++) {
+            RentorFile rentorFile = (RentorFile) rentorFileTable.getItems().get(j);
+            if (rentorFile.getHash().equals(deletedFile.getHash()) && rentorFile.getOwner().equals(deletedFile.getOwner())) {
+                rentorFileTable.getItems().remove(j);
+                break;
+            }
+        }
+    }
+
     private void setRentorFileTable() {
         rentorFileTable.setPlaceholder(new Label("No File Hosted in Your Storage"));
         TableColumn<RentorFile, String> hashColumn = new TableColumn<>("Hash");
@@ -567,20 +655,18 @@ public class DashboardController implements Initializable {
         }
     }
 
-    public  void updateBlockerFileSize(long receivedFileSize) {
+    private void updateBlockerFileSize() {
         System.out.println("Ploud home path: " + ploudHomePath);
         String blockerFilePath = ploudHomePath + File.separator + "blocker";
         System.out.println("Blocker file path: " + blockerFilePath);
         File currentBlockerFile = new File(blockerFilePath);
         if (currentBlockerFile.exists()) {
-            long currentBlockerFileSize = currentBlockerFile.length();
-            long newBlockerFileSize = currentBlockerFileSize-receivedFileSize;
-
+            long newBlockerFileSize = rentor.getFreeSpace();
             boolean blockerFileDeleted = currentBlockerFile.delete();
             if (blockerFileDeleted) {
-                System.out.println("Current blocker file(size: " + currentBlockerFileSize + ") deleted");
+                System.out.println("Current blocker file deleted");
                 createBlockerFile(newBlockerFileSize);
-                System.out.println("New blocker file(size: " + newBlockerFileSize + ") created");
+                System.out.println("New blocker file (size: " + newBlockerFileSize + ") created");
             }
         }
     }

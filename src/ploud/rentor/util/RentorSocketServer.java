@@ -171,6 +171,9 @@ public abstract class RentorSocketServer implements RentorTask, Runnable {
                             } else if (clientMessage.equals("doneFileUpload")) {
                                 reloadWallet();
                                 sendMessage("OK");
+                            } else if (clientMessage.equals("doneFileDelete")) {
+                                reloadRentorData();
+                                sendMessage("OK");
                             } else if (clientMessage.equals("getError")) {
                                 sendMessage(errorMessage);
                             } else {

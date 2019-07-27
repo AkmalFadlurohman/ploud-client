@@ -18,6 +18,7 @@ public class Renter {
     private String ipAddress;
     private long spaceUsage;
     private String token;
+    private String certificate;
     private Date lastLogin;
     private Date registerDate;
     private ArrayList<RenterFile> renterFiles;
@@ -113,6 +114,14 @@ public class Renter {
         return token;
     }
 
+    public void setCertificate(String certificate) {
+        this.certificate = certificate;
+    }
+
+    public String getCertificate() {
+        return certificate;
+    }
+
     public void setLastLogin(Date lastLogin) {
         this.lastLogin = lastLogin;
     }
@@ -133,7 +142,7 @@ public class Renter {
         this.renterFiles = renterFiles;
     }
 
-    public ArrayList getRenterFiles() {
+    public ArrayList<RenterFile> getRenterFiles() {
         return renterFiles;
     }
 
