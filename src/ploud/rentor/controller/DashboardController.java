@@ -19,6 +19,7 @@ import org.json.simple.parser.JSONParser;
 import ploud.renter.model.RenterFile;
 import ploud.rentor.model.Wallet;
 import ploud.rentor.util.ComposerConnection;
+import ploud.rentor.util.MirrorSocketServer;
 import ploud.rentor.util.WalletTransaction;
 import ploud.util.AlertHelper;
 import ploud.rentor.model.Rentor;
@@ -62,6 +63,7 @@ public class DashboardController implements Initializable {
     private String ploudHomePath = System.getProperty("user.home") + File.separator + "Ploud";
 
     private RentorSocketServer rentorSocketServer = null;
+    private MirrorSocketServer mirrorSocketServer = null;
 
     private ComposerConnection composerConnection;
 
@@ -75,7 +77,21 @@ public class DashboardController implements Initializable {
         bodyContainer.setDisable(true);
         progressIndicator.setVisible(true);
         //Create and run socket server
-        rentorSocketServer = new RentorSocketServer(8089) {
+        mirrorSocketServer = new MirrorSocketServer() {
+            int publicPort;
+
+            @Override
+            public void setPublicPort(int port) {
+                publicPort = port;
+            }
+
+            @Override
+            public int getPublicPort() {
+                return publicPort;
+            }
+        };
+        mirrorSocketServer.start();
+        rentorSocketServer = new RentorSocketServer() {
             private RentorFile receivedFile = null;
             private File requestedFile = null;
             @Override
@@ -273,6 +289,7 @@ public class DashboardController implements Initializable {
             }
         };
         rentorSocketServer.start();
+        rentorSocketServer.pingMirrorSocket();
     }
 
     public void loadRentorData(ComposerConnection composerConnection, String email) {
@@ -317,6 +334,65 @@ public class DashboardController implements Initializable {
                 });
             }
         });
+        Runnable releaseSpaceSyncTask = new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("Running ReleaseSpace synchronization process..");
+                //DateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                DateFormat utcDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                utcDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+                String utcLastLogin = utcDateFormat.format(rentor.getLastLogin());
+                String releaseSpaceData = composerConnection.getReleaseSpaceRecords(utcLastLogin);
+                if (releaseSpaceData != null && !releaseSpaceData.equals("[]")) {
+                    try {
+                        JSONArray releaseSpaceRecords = (JSONArray) new JSONParser().parse(releaseSpaceData);
+                        Iterator iterator = releaseSpaceRecords.iterator();
+                        while (iterator.hasNext()) {
+                            JSONObject releaseSpace = (JSONObject) iterator.next();
+                            System.out.println("ReleaseSpace transaction: " + releaseSpace.toJSONString());
+                            String owner = ((String) releaseSpace.get("renter")).split("#")[1];
+                            String hash = (String) releaseSpace.get("documentHash");
+                            long size = (long) releaseSpace.get("documentSize");
+                            String releasedFilePath = ploudHomePath + File.separator + owner + File.separator + hash;
+                            System.out.println("File to be released path: " + releasedFilePath);
+                            File releasedFile = new File(releasedFilePath);
+                            if (releasedFile.exists() && releasedFile.isFile() && releasedFile.length() == size) {
+                                boolean releasedFileDeleted = releasedFile.delete();
+                                if (releasedFileDeleted) {
+                                    System.out.println("Deleted File: " + releasedFile.getName() + " Owner: " + owner + " on ReleaseSpace");
+                                } else {
+                                    System.out.println("Failed to delete File: " + releasedFile.getName() + " Owner: " + owner + " on ReleaseSpace");
+                                }
+                            } else {
+                                System.out.println(releasedFilePath + " does not exist.");
+                            }
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                } else {
+                    System.out.println("No new ReleaseSpace data.");
+                }
+            }
+        };
+        rentorDataLoadTask.thenRun(releaseSpaceSyncTask);
+
+        Runnable updateOnLoginTask = new Runnable() {
+            @Override
+            public void run() {
+                int port = mirrorSocketServer.getPublicPort();
+                mirrorSocketServer.terminate();
+                mirrorSocketServer.close();
+                System.out.println("Retrieved hole punching port: " + port);
+                mirrorSocketServer = null;
+
+                String ipAddress = ComposerConnection.getNetworkInetAddress().getHostAddress();
+                rentor.setLastLogin(new Date());
+                rentor.setIpAddress(ipAddress);
+                composerConnection.updateOnLogin(rentor);
+            }
+        };
+        rentorDataLoadTask.thenRun(updateOnLoginTask);
 
         serverPollingTask = new Timeline(new KeyFrame(Duration.seconds(20), new EventHandler<ActionEvent>() {
             @Override
@@ -333,43 +409,7 @@ public class DashboardController implements Initializable {
         serverPollingTask.setCycleCount(Timeline.INDEFINITE);
         serverPollingTask.play();
 
-        Runnable releaseSpaceSyncTask = new Runnable() {
-            @Override
-            public void run() {
-                DateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                String releaseSpaceData = composerConnection.getReleaseSpaceRecords(simpleDateFormat.format(rentor.getLastOnline()));
-                if (releaseSpaceData != null && !releaseSpaceData.equals("[]")) {
-                    try {
-                        JSONArray releaseSpaceRecords = (JSONArray) new JSONParser().parse(releaseSpaceData);
-                        Iterator iterator = releaseSpaceRecords.iterator();
-                        while (iterator.hasNext()) {
-                            JSONObject releaseSpace = (JSONObject) iterator.next();
-                            System.out.println("ReleaseSpace transaction: " + releaseSpace.toJSONString());
-                            String owner = ((String) releaseSpace.get("renter")).split("#")[1];
-                            String hash = (String) releaseSpace.get("documentHash");
-                            long size = (long) releaseSpace.get("documentSize");
-                            String releasedFilePath = ploudHomePath + File.separator + owner + File.separator + hash;
-                            System.out.println("File to be released path: " + releasedFilePath);
-                            File releasedFile = new File(releasedFilePath);
-                            if (releasedFile.exists() && releasedFile.isFile() && releasedFile.length() == size) {
-                                boolean releasedFileDeleted = releasedFile.delete();
-                                System.out.println("Released file path: " + releasedFilePath);
-                                if (releasedFileDeleted) {
-                                    System.out.println("Deleted File: " + releasedFile.getName() + " Owner: " + owner + " on ReleaseSpace");
-                                } else {
-                                    System.out.println("Failed to delete File: " + releasedFile.getName() + " Owner: " + owner + " on ReleaseSpace");
-                                }
-                            }
-                        }
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                } else {
-                    System.out.println("No new ReleaseSpace data.");
-                }
-            }
-        };
-        new Thread(releaseSpaceSyncTask).start();
+        //new Thread(releaseSpaceSyncTask).start();
     }
 
     @FXML
@@ -630,6 +670,10 @@ public class DashboardController implements Initializable {
         if (rentorSocketServer != null) {
             rentorSocketServer.stop();
             rentorSocketServer.close();
+        }
+        if (mirrorSocketServer != null) {
+            mirrorSocketServer.terminate();
+            mirrorSocketServer.close();
         }
     }
 

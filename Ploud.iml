@@ -11,5 +11,8 @@
     <orderEntry type="library" name="javafx" level="application" />
     <orderEntry type="library" name="json-simple" level="application" />
     <orderEntry type="library" name="lib" level="project" />
+    <orderEntry type="library" name="com.offbynull.portmapper:portmapper:2.0.5" level="project" />
+    <orderEntry type="library" name="WaifUPnP" level="project" />
+    <orderEntry type="library" name="org.slf4j:slf4j-simple:1.7.21" level="project" />
   </component>
 </module>

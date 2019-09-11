@@ -1,8 +1,10 @@
 package ploud.renter.util;
 
+import com.dosse.upnp.UPnP;
 import ploud.renter.model.RenterFile;
 
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.concurrent.*;
@@ -16,12 +18,19 @@ public class RenterSocket {
     private SocketListenerTask socketListenerTask = null;
     private Thread socketListenerThread = null;
     private ExecutorService executorService = Executors.newCachedThreadPool();
+    private final int port = 8088;
 
 
     public RenterSocket(String serverAddress, int serverPort) throws UnknownHostException, IOException {
         System.out.println("Establishing connection to rentor peer");
+        UPnP.openPortTCP(serverPort);
         socket = new Socket(serverAddress, serverPort);
-        System.out.println("Connected to rentor peer: " + socket);
+//        socket = new Socket();
+//        socket.setReuseAddress(true);
+//        socket.bind(new InetSocketAddress("localhost", port));
+        System.out.println("Initialized renter socket: " + socket);
+        //socket.connect(new InetSocketAddress(serverAddress, serverPort));
+        System.out.println("Connected to rentor peer: " + serverAddress + " on port: " + serverPort);
     }
 
     public void start() {

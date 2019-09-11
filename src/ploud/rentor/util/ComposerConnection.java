@@ -26,7 +26,7 @@ public class ComposerConnection {
     private String rentorAuthAddress = composerAuthAPI + "/Rentor";
     private String walletAddress = composerAPI + "/Wallet";
     private String registerSpaceAddress = composerAuthAPI + "/RegisterSpace";
-    private String releaseSpaceAddress = composerAuthAPI + "ReleaseSpace";
+    private String releaseSpaceAddress = composerAuthAPI + "/ReleaseSpace";
     private String depositCoinAddress = composerAuthAPI + "/DepositCoin";
     private String withdrawCoinAddress = composerAuthAPI + "/WithdrawCoin";
 
@@ -296,22 +296,11 @@ public class ComposerConnection {
         return -1;
     }
 
-    public int updateOnLogin(String email) {
-        String param = "/" + email;
+    public int updateOnLogin(Rentor rentor) {
+        String param = "/" + rentor.getEmail();
         String address = rentorAddress + param;
-        String rentorData = getRentorData(email);
-        if (rentorData == null) {
-            return -1;
-        }
         try {
-            String lastLogin = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(new Date());
-            String ipAddress = getNetworkInetAddress().getHostAddress();
-            JSONObject rentor = (JSONObject) new JSONParser().parse(rentorData);
-            rentor.put("lastOnline", lastLogin);
-            rentor.put("lastLogin", lastLogin);
-            rentor.put("ipAddress", ipAddress);
-
-            String body = rentor.toJSONString();
+            String body = rentor.toJSON();
             System.out.println("Sending update rentor data onLogin request: " + body);
 
             URL urlAddress = new URL(address);
@@ -441,7 +430,7 @@ public class ComposerConnection {
 
     public String getReleaseSpaceRecords(String lastOnline) {
         try {
-            String filter = "{'where':{'timestamp':{'gte':'" + lastOnline + "'}}}";
+            String filter = "{\"where\":{\"timestamp\":{\"gte\":\"" + lastOnline + "\"}}}";
             String param = "?filter=" + URLEncoder.encode(filter, "UTF-8");
             String address = releaseSpaceAddress + param;
             System.out.println("Get ReleaseSpace address: " + address);
@@ -454,20 +443,20 @@ public class ComposerConnection {
 
             int responseCode = httpGet.getResponseCode();
             System.out.println("Get ReleaseSpace data response code: " + responseCode);
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpGet.getInputStream()));
-                String inputLine;
-                StringBuilder stringBuilder = new StringBuilder();
-                while ((inputLine = bufferedReader.readLine()) != null) {
-                    stringBuilder.append(inputLine);
-                }
-                bufferedReader.close();
-                httpGet.disconnect();
-                String response = stringBuilder.toString();
-                System.out.println("Get ReleaseSpace data response: " + response);
-                return response;
+//            if (responseCode == HttpURLConnection.HTTP_OK) {
+//            }
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(httpGet.getInputStream()));
+            String inputLine;
+            StringBuilder stringBuilder = new StringBuilder();
+            while ((inputLine = bufferedReader.readLine()) != null) {
+                stringBuilder.append(inputLine);
             }
+            bufferedReader.close();
             httpGet.disconnect();
+            String response = stringBuilder.toString();
+            System.out.println("Get ReleaseSpace data response: " + response);
+            httpGet.disconnect();
+            return response;
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -550,10 +539,6 @@ public class ComposerConnection {
 //            rentor.put("lastOnline", lastOnline);
 
             String body = rentor.toJSON();
-            if (!rentor.getRentorFiles().isEmpty()) {
-                System.out.println("Sending update rentor data lastOnline request: " + body);
-            }
-
             URL urlAddress = new URL(address);
             HttpURLConnection httpPut = (HttpURLConnection) urlAddress.openConnection();
 
@@ -577,7 +562,7 @@ public class ComposerConnection {
         return -1;
     }
 
-    private InetAddress getNetworkInetAddress() {
+    public static InetAddress getNetworkInetAddress() {
         try {
             Enumeration networkInterfacesEn = NetworkInterface.getNetworkInterfaces();
             while (networkInterfacesEn.hasMoreElements()) {
@@ -596,74 +581,74 @@ public class ComposerConnection {
         }
         return null;
     }
-}
+    class MultipartUtility {
+        private final String boundary;
+        private static final String LINE_FEED = "\r\n";
+        private HttpURLConnection httpConn;
+        private String charset;
+        private OutputStream outputStream;
+        private PrintWriter writer;
 
-class MultipartUtility {
-    private final String boundary;
-    private static final String LINE_FEED = "\r\n";
-    private HttpURLConnection httpConn;
-    private String charset;
-    private OutputStream outputStream;
-    private PrintWriter writer;
+         MultipartUtility(String requestURL, String charset) throws IOException {
+            this.charset = charset;
+            boundary = "===" + System.currentTimeMillis() + "===";
 
-     MultipartUtility(String requestURL, String charset) throws IOException {
-        this.charset = charset;
-        boundary = "===" + System.currentTimeMillis() + "===";
-
-        URL url = new URL(requestURL);
-        httpConn = (HttpURLConnection) url.openConnection();
-        httpConn.setUseCaches(false);
-        httpConn.setDoOutput(true);
-        httpConn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-        outputStream = httpConn.getOutputStream();
-        writer = new PrintWriter(new OutputStreamWriter(outputStream, charset), true);
-    }
-
-    void addHeaderField(String name, String value) {
-        writer.append(name + ": " + value).append(LINE_FEED);
-        writer.flush();
-    }
-
-    void addFormField(String name, String value) {
-        writer.append("--" + boundary).append(LINE_FEED);
-        writer.append("Content-Disposition: form-data; name=\"" + name + "\"").append(LINE_FEED);
-        writer.append("Content-Type: text/plain; charset=" + charset).append(LINE_FEED);
-        writer.append(LINE_FEED);
-        writer.append(value).append(LINE_FEED);
-        writer.flush();
-    }
-
-    void addFilePart(String fieldName, File uploadFile)
-            throws IOException {
-        String fileName = uploadFile.getName();
-        writer.append("--" + boundary).append(LINE_FEED);
-        writer.append("Content-Disposition: form-data; name=\"" + fieldName + "\"; filename=\"" + fileName + "\"").append(LINE_FEED);
-        writer.append("Content-Type: " + URLConnection.guessContentTypeFromName(fileName)).append(LINE_FEED);
-        writer.append("Content-Transfer-Encoding: binary").append(LINE_FEED);
-        writer.append(LINE_FEED);
-        writer.flush();
-
-        FileInputStream inputStream = new FileInputStream(uploadFile);
-        byte[] buffer = new byte[4096];
-        int bytesRead = -1;
-        while ((bytesRead = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, bytesRead);
+            URL url = new URL(requestURL);
+            httpConn = (HttpURLConnection) url.openConnection();
+            httpConn.setUseCaches(false);
+            httpConn.setDoOutput(true);
+            httpConn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            outputStream = httpConn.getOutputStream();
+            writer = new PrintWriter(new OutputStreamWriter(outputStream, charset), true);
         }
-        outputStream.flush();
-        inputStream.close();
 
-        writer.append(LINE_FEED);
-        writer.flush();
-    }
+        void addHeaderField(String name, String value) {
+            writer.append(name + ": " + value).append(LINE_FEED);
+            writer.flush();
+        }
+
+        void addFormField(String name, String value) {
+            writer.append("--" + boundary).append(LINE_FEED);
+            writer.append("Content-Disposition: form-data; name=\"" + name + "\"").append(LINE_FEED);
+            writer.append("Content-Type: text/plain; charset=" + charset).append(LINE_FEED);
+            writer.append(LINE_FEED);
+            writer.append(value).append(LINE_FEED);
+            writer.flush();
+        }
+
+        void addFilePart(String fieldName, File uploadFile)
+                throws IOException {
+            String fileName = uploadFile.getName();
+            writer.append("--" + boundary).append(LINE_FEED);
+            writer.append("Content-Disposition: form-data; name=\"" + fieldName + "\"; filename=\"" + fileName + "\"").append(LINE_FEED);
+            writer.append("Content-Type: " + URLConnection.guessContentTypeFromName(fileName)).append(LINE_FEED);
+            writer.append("Content-Transfer-Encoding: binary").append(LINE_FEED);
+            writer.append(LINE_FEED);
+            writer.flush();
+
+            FileInputStream inputStream = new FileInputStream(uploadFile);
+            byte[] buffer = new byte[4096];
+            int bytesRead = -1;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+            inputStream.close();
+
+            writer.append(LINE_FEED);
+            writer.flush();
+        }
 
 
-    int submit() throws IOException {
-        writer.append(LINE_FEED).flush();
-        writer.append("--" + boundary + "--").append(LINE_FEED);
-        writer.close();
+        int submit() throws IOException {
+            writer.append(LINE_FEED).flush();
+            writer.append("--" + boundary + "--").append(LINE_FEED);
+            writer.close();
 
-        int responseCode = httpConn.getResponseCode();
-        httpConn.disconnect();
-        return responseCode;
+            int responseCode = httpConn.getResponseCode();
+            httpConn.disconnect();
+            return responseCode;
+        }
     }
 }
+

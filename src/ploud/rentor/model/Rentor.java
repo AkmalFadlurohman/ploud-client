@@ -49,6 +49,7 @@ public class Rentor {
             String name = (String) rentor.get("name");
             String email = (String) rentor.get("email");
             String ipAddress = (String) rentor.get("ipAddress");
+
             long registeredSpace = (long) rentor.get("registeredSpace");
             long freeSpace = (long) rentor.get("freeSpace");
 

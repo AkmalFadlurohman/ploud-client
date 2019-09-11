@@ -1,24 +1,34 @@
 package ploud.rentor.util;
 
+import com.dosse.upnp.UPnP;
+
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public abstract class RentorSocketServer implements RentorTask, Runnable {
     private ServerSocket serverSocket = null;
+    private Socket mirrorSocket = null;
     private Socket clientSocket = null;
     private Thread serverThread = null;
     private int clientCount = 0;
     private int maxClient = 15;
     private final ExecutorService clientPool = Executors.newFixedThreadPool(maxClient);
     private volatile boolean running = true;
+    private final int port = 8089;
 
-    public RentorSocketServer(int port) {
+    public RentorSocketServer() {
         try {
             System.out.println("Binding to port " + port);
-            serverSocket = new ServerSocket(port);
+            //serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket();
+            String ipAddress = ComposerConnection.getNetworkInetAddress().getHostAddress();
+            //String ipAddress = "118.96.148.243";
+           // int publicPort = 61521;
+            serverSocket.setReuseAddress(true);
+            UPnP.openPortTCP(port);
+            serverSocket.bind(new InetSocketAddress(ipAddress, port));
             System.out.println("Server started: " + serverSocket);
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -29,6 +39,15 @@ public abstract class RentorSocketServer implements RentorTask, Runnable {
         if (serverThread == null) {
             serverThread = new Thread(this);
             serverThread.start();
+        }
+    }
+
+    public void pingMirrorSocket() {
+        try {
+            mirrorSocket = new Socket("localhost", 8900);
+            mirrorSocket.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 
@@ -87,7 +106,6 @@ public abstract class RentorSocketServer implements RentorTask, Runnable {
     private void acceptClient(Socket clientSocket) {
         if (clientCount < maxClient) {
             clientCount++;
-            System.out.println("Client accepted: " + clientSocket);
             clientPool.submit(new ClientTask(clientSocket));
         } else {
             System.out.println("Client refused: maximum " + maxClient + " clients reached.");
@@ -106,12 +124,15 @@ public abstract class RentorSocketServer implements RentorTask, Runnable {
 
         private ClientTask(Socket clientSocket) {
             this.clientSocket = clientSocket;
-
         }
 
         @Override
         public void run() {
-            System.out.println("Connected client port: " + clientSocket.getPort());
+            InetSocketAddress clientAddress = (InetSocketAddress) clientSocket.getRemoteSocketAddress();
+            String clientIP = clientAddress.getAddress().getHostAddress().trim();
+            int clientPublicPort = clientSocket.getPort();
+            int clientLocalPort = clientSocket.getLocalPort();
+            System.out.println("Client accepted: " + clientIP + " ( " + clientLocalPort + " -> " + clientPublicPort + " )");
             try {
                 //streamIn = new DataInputStream(new BufferedInputStream(clientSocket.getInputStream()));
                 readerIn = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -201,7 +222,6 @@ public abstract class RentorSocketServer implements RentorTask, Runnable {
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            //out.println(message);
         }
 
         private void terminate() {
@@ -215,7 +235,6 @@ public abstract class RentorSocketServer implements RentorTask, Runnable {
                 streamIn.close();
                 readerIn.close();
                 streamOut.close();
-                //out.close();
                 clientSocket.close();
             } catch (IOException ex) {
                 ex.printStackTrace();

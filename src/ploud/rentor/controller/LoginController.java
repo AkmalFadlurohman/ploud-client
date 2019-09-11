@@ -16,6 +16,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import ploud.rentor.model.Rentor;
 import ploud.rentor.util.ComposerConnection;
 import ploud.util.AlertHelper;
 import ploud.util.Authenticator;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -69,7 +71,12 @@ public class LoginController {
                     String lastName = (String) user.get("family_name");
                     boolean rentorRegistered = composerConnection.isRentorRegistered(email);
                     if (rentorRegistered) {
-                        int updateOnLoginResponse = composerConnection.updateOnLogin(email);
+                        String rentorData = composerConnection.getRentorData(email);
+                        String ipAddress = composerConnection.getNetworkInetAddress().getHostAddress();
+                        Rentor rentor = new Rentor(rentorData);
+                        rentor.setLastLogin(new Date());
+                        rentor.setIpAddress(ipAddress);
+                        int updateOnLoginResponse = composerConnection.updateOnLogin(rentor);
                         if (updateOnLoginResponse != HttpURLConnection.HTTP_OK) {
                             AlertHelper.showAlert(Alert.AlertType.ERROR, primaryStage, "System Error", "Failed to update on login data. Please try again later.");
                             return;

@@ -60,8 +60,8 @@ public class Main extends Application {
                     controller.logOut();
                 }
             });
-            composerConnection.updateOnLogin(email);
             controller.loadRentorData(composerConnection, email);
+            //composerConnection.updateOnLogin(email);
         } else {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/layout/Login.fxml"));
             loader.setController(new LoginController());
