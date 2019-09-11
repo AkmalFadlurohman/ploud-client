@@ -12,7 +12,15 @@
     <orderEntry type="library" name="json-simple" level="application" />
     <orderEntry type="library" name="lib" level="project" />
     <orderEntry type="library" name="com.offbynull.portmapper:portmapper:2.0.5" level="project" />
-    <orderEntry type="library" name="WaifUPnP" level="project" />
     <orderEntry type="library" name="org.slf4j:slf4j-simple:1.7.21" level="project" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/WaifUPnP.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
