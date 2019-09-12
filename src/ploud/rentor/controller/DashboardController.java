@@ -359,7 +359,7 @@ public class DashboardController implements Initializable {
                             String releasedFilePath = ploudHomePath + File.separator + owner + File.separator + hash;
                             System.out.println("File to be released path: " + releasedFilePath);
                             File releasedFile = new File(releasedFilePath);
-                            if (releasedFile.exists() && releasedFile.isFile() && releasedFile.length() == size) {
+                            if (releasedFile.exists() && releasedFile.isFile()) {
                                 boolean releasedFileDeleted = releasedFile.delete();
                                 if (releasedFileDeleted) {
                                     System.out.println("Deleted File: " + releasedFile.getName() + " Owner: " + owner + " on ReleaseSpace");

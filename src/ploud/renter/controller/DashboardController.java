@@ -716,6 +716,7 @@ public class DashboardController implements Initializable {
                                             AlertHelper.showAlert(Alert.AlertType.INFORMATION, primaryStage, "File Download", selectedFile.getName() + "(" + selectedFile.getRenderSize()+ ") successfully downloaded to local storage.");
                                         }
                                         boolean decryptedFileDeleted = decryptedFile.delete();
+                                        boolean receivedFileDeleted = receivedFile.delete();
                                     } catch (Exception ex) {
                                         ex.printStackTrace();
                                     }

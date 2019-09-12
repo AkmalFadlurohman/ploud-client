@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="cdb932d9-7e58-4d94-93a9-e7b232ef17da" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/src/ploud/renter/util/RenterSocket.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/renter/util/RenterSocket.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KTM.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/KTP.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java" afterDir="false" />
     </list>
     <ignored path="JavaFxApplication.iws" />
@@ -64,31 +67,10 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/ploud/rentor/util/RentorSocketServer.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1978">
-              <caret line="3" selection-start-line="3" selection-end-line="3" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="254">
-              <caret line="185" column="17" selection-start-line="185" selection-start-column="17" selection-end-line="185" selection-end-column="17" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1118">
-              <caret line="703" column="42" selection-start-line="703" selection-start-column="42" selection-end-line="703" selection-end-column="42" />
+            <state relative-caret-position="160">
+              <caret line="714" column="65" lean-forward="true" selection-start-line="714" selection-start-column="65" selection-end-line="714" selection-end-column="65" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -97,10 +79,10 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/ploud/renter/util/RenterSocket.java">
+        <entry file="file://$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="305">
-              <caret line="152" column="25" selection-start-line="152" selection-start-column="25" selection-end-line="152" selection-end-column="25" />
+            <state relative-caret-position="203">
+              <caret line="361" column="78" selection-start-line="361" selection-start-column="78" selection-end-line="361" selection-end-column="78" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -209,11 +191,11 @@
         <option value="$PROJECT_DIR$/src/ploud/rentor/util/RentorSocketServer.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/model/Rentor.java" />
         <option value="$PROJECT_DIR$/src/ploud/rentor/controller/LoginController.java" />
-        <option value="$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java" />
         <option value="$PROJECT_DIR$/src/ploud/util/PortMapper.java" />
         <option value="$PROJECT_DIR$/src/ploud/util/PortMap.java" />
-        <option value="$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java" />
         <option value="$PROJECT_DIR$/src/ploud/renter/util/RenterSocket.java" />
+        <option value="$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java" />
+        <option value="$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java" />
       </list>
     </option>
   </component>
@@ -233,7 +215,6 @@
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -272,14 +253,6 @@
               <item name="Ploud" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="ploud" type="462c0819:PsiDirectoryNode" />
-              <item name="renter" type="462c0819:PsiDirectoryNode" />
-              <item name="util" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="Ploud" type="b2602c69:ProjectViewProjectNode" />
-              <item name="Ploud" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="ploud" type="462c0819:PsiDirectoryNode" />
               <item name="rentor" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
@@ -294,6 +267,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -352,7 +326,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.Renter">
+  <component name="RunManager" selected="Application.Rentor">
     <configuration default="true" type="DartUnitRunConfigurationType" factoryName="DartUnit">
       <option name="VMOptions" />
       <option name="arguments" />
@@ -441,9 +415,9 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Application.PortMap" />
       <item itemvalue="Application.Renter" />
       <item itemvalue="Application.Rentor" />
+      <item itemvalue="Application.PortMap" />
     </list>
     <recent_temporary>
       <list>
@@ -478,9 +452,9 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1280" height="777" extended-state="6" />
+    <frame x="0" y="23" width="1280" height="777" extended-state="0" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.6703755" visible="true" weight="0.20436187" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.6703755" visible="true" weight="0.20759289" />
       <window_info id="Structure" order="1" weight="0.24959612" />
       <window_info id="Favorites" order="2" />
       <window_info id="Designer" order="3" />
@@ -489,7 +463,7 @@
       <window_info id="Capture Tool" order="6" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.329927" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.30072993" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.30072993" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -915,13 +889,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/util/RentorSocketServer.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1978">
-          <caret line="3" selection-start-line="3" selection-end-line="3" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/ploud/renter/Main.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="330">
@@ -932,30 +899,37 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java">
+    <entry file="file://$PROJECT_DIR$/src/ploud/renter/util/RenterSocket.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="254">
-          <caret line="185" column="17" selection-start-line="185" selection-start-column="17" selection-end-line="185" selection-end-column="17" />
+        <state relative-caret-position="305">
+          <caret line="152" column="25" selection-start-line="152" selection-start-column="25" selection-end-line="152" selection-end-column="25" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/util/RentorSocketServer.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="3" selection-start-line="3" selection-end-line="3" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/ploud/renter/controller/DashboardController.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1118">
-          <caret line="703" column="42" selection-start-line="703" selection-start-column="42" selection-end-line="703" selection-end-column="42" />
+        <state relative-caret-position="160">
+          <caret line="714" column="65" lean-forward="true" selection-start-line="714" selection-start-column="65" selection-end-line="714" selection-end-column="65" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/ploud/renter/util/RenterSocket.java">
+    <entry file="file://$PROJECT_DIR$/src/ploud/rentor/controller/DashboardController.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="305">
-          <caret line="152" column="25" selection-start-line="152" selection-start-column="25" selection-end-line="152" selection-end-column="25" />
+        <state relative-caret-position="203">
+          <caret line="361" column="78" selection-start-line="361" selection-start-column="78" selection-end-line="361" selection-end-column="78" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
