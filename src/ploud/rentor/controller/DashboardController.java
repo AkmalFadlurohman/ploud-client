@@ -135,6 +135,9 @@ public class DashboardController implements Initializable {
                             remainingBytes -= bytesRead;
                             System.out.println("Received " + totalBytesRead + " bytes. Remaining expected: " + remainingBytes);
                             fos.write(receivedFileBytes, 0, bytesRead);
+                            if (remainingBytes == 1) {
+                                remainingBytes--;
+                            }
                         }
                         fos.close();
                     } catch (IOException ex) {
@@ -181,12 +184,12 @@ public class DashboardController implements Initializable {
                     //return "File not Exist";
                     return;
                 }
-                if (requestedFile.length() != rentorFile.getSize()) {
-                    System.out.println("Error: Mismatched requested file size");
-                    requestedFile = null;
-                    //return "Mismatched file";
-                    return;
-                }
+//                if (requestedFile.length() != rentorFile.getSize()) {
+//                    System.out.println("Error: Mismatched requested file size");
+//                    requestedFile = null;
+//                    //return "Mismatched file";
+//                    return;
+//                }
             }
 
             @Override

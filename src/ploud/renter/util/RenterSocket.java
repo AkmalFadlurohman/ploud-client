@@ -148,6 +148,9 @@ public class RenterSocket {
                         remainingBytes -= bytesRead;
                         System.out.println("Downloaded " + totalBytesRead + " bytes. Remaining to download: " + remainingBytes);
                         fos.write(receivedFileBytes, 0, bytesRead);
+                        if (remainingBytes == 1) {
+                            remainingBytes--;
+                        }
                     }
                     fos.close();
                     System.out.println("File: " + fileToReceive.getName() + " download completed");
